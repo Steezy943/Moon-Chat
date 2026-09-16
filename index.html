@@ -1,71 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#000000">
-    <title>Moon Chat</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-    <script src="script.js" defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
+  <title>Moon Chat</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
 </head>
 <body>
-    <canvas id="bg-canvas" aria-hidden="true"></canvas>
-
-    <main class="card-container" id="card-container">
-        <section class="glass-card" id="glass-card">
-            <div id="auth-section" class="form-step active">
-                <div class="brand-mark" aria-hidden="true">✦</div>
-                <p class="eyebrow">MOON CHAT</p>
-                <h1 id="auth-title">Welcome back</h1>
-                <p class="subtitle">A quiet place to connect.</p>
-
-                <div class="toggle-container" role="tablist" aria-label="Authentication mode">
-                    <button type="button" id="toggle-login" class="toggle-btn active" role="tab" aria-selected="true">Login</button>
-                    <button type="button" id="toggle-signup" class="toggle-btn" role="tab" aria-selected="false">Sign up</button>
-                </div>
-
-                <form id="auth-form" novalidate>
-                    <div class="input-group">
-                        <label for="username">Username</label>
-                        <input type="text" id="username" placeholder="Enter username" required autocomplete="username" maxlength="32">
-                    </div>
-                    <div class="input-group">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" placeholder="Enter password" required autocomplete="current-password" minlength="4">
-                    </div>
-                    <div class="input-group id-signup-only hidden">
-                        <label for="birthdate">Birthdate</label>
-                        <input type="date" id="birthdate" autocomplete="bday">
-                    </div>
-                    <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
-                    <button type="submit" id="submit-btn" class="action-btn">Login</button>
-                </form>
-            </div>
-
-            <div id="customize-section" class="form-step">
-                <p class="eyebrow">ONE LAST STEP</p>
-                <h1>Customize your profile</h1>
-                <p class="subtitle">Make your presence feel like home.</p>
-                <div class="form-scroll-container">
-                    <div class="input-group"><label for="avatar">Profile picture URL</label><input type="url" id="avatar" placeholder="https://example.com/avatar.png"></div>
-                    <div class="input-group"><label for="banner">Profile banner URL</label><input type="url" id="banner" placeholder="https://example.com/banner.png"></div>
-                    <div class="input-group"><label for="font-family">Username font</label>
-                        <select id="font-family"><option value="'Segoe UI', sans-serif">Standard</option><option value="'Courier New', monospace">Retro Space</option><option value="Georgia, serif">Elegant</option><option value="Impact, sans-serif">Bold Impact</option></select>
-                    </div>
-                    <div class="input-group"><label for="font-color">Username color</label><input type="color" id="font-color" value="#ffffff"></div>
-                    <label class="toggle-inline" for="glow-toggle"><span>Username text glow</span><input type="checkbox" id="glow-toggle"></label>
-                    <div class="preview-box"><p>USERNAME PREVIEW</p><span id="username-preview">YourName</span></div>
-                    <button type="button" id="save-profile-btn" class="action-btn">Enter Moon Chat</button>
-                </div>
-            </div>
-
-            <div id="chat-section" class="form-step">
-                <div class="chat-header"><span id="room-title"># global-chat</span><span id="user-role-badge">Role: User</span></div>
-                <div id="message-container" aria-live="polite"></div>
-                <form id="chat-input-form"><input type="text" id="chat-msg" placeholder="Type a message..." autocomplete="off" maxlength="500" required><button type="submit" id="send-btn">Send</button></form>
-            </div>
-        </section>
-    </main>
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+  <main class="card-container" id="card-container">
+    <section class="glass-card" id="glass-card">
+      <div id="auth-section" class="form-step active">
+        <div class="brand-mark" aria-hidden="true">✦</div>
+        <p class="eyebrow">MOON CHAT</p><h1 id="auth-title">Welcome back</h1><p class="subtitle">A quiet place to connect.</p>
+        <div class="toggle-container" role="tablist"><button type="button" id="toggle-login" class="toggle-btn active" role="tab" aria-selected="true">Login</button><button type="button" id="toggle-signup" class="toggle-btn" role="tab" aria-selected="false">Sign up</button></div>
+        <form id="auth-form" novalidate>
+          <div class="input-group"><label for="username">Username</label><input id="username" type="text" required maxlength="32" autocomplete="username" placeholder="Enter username"></div>
+          <div class="input-group"><label for="password">Password</label><input id="password" type="password" required minlength="4" autocomplete="current-password" placeholder="Enter password"></div>
+          <div class="input-group hidden"><label for="birthdate">Birthdate</label><input id="birthdate" type="date"></div>
+          <p id="form-status" class="form-status" role="status"></p><button id="submit-btn" class="action-btn" type="submit">Login</button>
+        </form>
+      </div>
+      <div id="customize-section" class="form-step"><p class="eyebrow">ONE LAST STEP</p><h1>Customize your profile</h1><p class="subtitle">Make your presence feel like home.</p><div class="form-scroll-container"><div class="input-group"><label for="avatar">Profile picture URL</label><input id="avatar" type="url" placeholder="https://example.com/avatar.png"></div><div class="input-group"><label for="banner">Profile banner URL</label><input id="banner" type="url" placeholder="https://example.com/banner.png"></div><div class="input-group"><label for="font-family">Username font</label><select id="font-family"><option value="'Segoe UI', sans-serif">Standard</option><option value="'Courier New', monospace">Retro Space</option><option value="Georgia, serif">Elegant</option><option value="Impact, sans-serif">Bold Impact</option></select></div><div class="input-group"><label for="font-color">Username color</label><input id="font-color" type="color" value="#ffffff"></div><label class="toggle-inline" for="glow-toggle"><span>Username text glow</span><input id="glow-toggle" type="checkbox"></label><div class="preview-box"><p>USERNAME PREVIEW</p><span id="username-preview">YourName</span></div><button id="save-profile-btn" class="action-btn" type="button">Enter Moon Chat</button></div></div>
+      <div id="chat-section" class="form-step"><div class="chat-header"><span># global-chat</span><span id="user-role-badge">Role: User</span></div><div id="message-container" aria-live="polite"></div><form id="chat-input-form"><input id="chat-msg" required maxlength="500" autocomplete="off" placeholder="Type a message..."><button id="send-btn" type="submit">Send</button></form></div>
+    </section>
+  </main>
 </body>
 </html>

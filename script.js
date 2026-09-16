@@ -1,108 +1,153 @@
 (() => {
   'use strict';
 
+  // This page is intentionally self-contained. The previous version tried to
+  // initialise Supabase with a placeholder URL, which could stop the entire
+  // script before buttons received their event handlers.
   const $ = (id) => document.getElementById(id);
+  const card = $('card-container');
+  const panel = $('glass-card');
   const canvas = $('bg-canvas');
   const ctx = canvas.getContext('2d');
-  const cardContainer = $('card-container');
-  const glassCard = $('glass-card');
+  const mouse = { x: -9999, y: -9999 };
   let particles = [];
   let authMode = 'login';
-  let cachedUser = null;
-  let supabaseClient = null;
-  const mouse = { x: -1000, y: -1000 };
+  let currentUser = null;
 
-  // The original page called supabase.createClient while declaring a const named
-  // supabase, which throws before any click handler can be registered. Keep the
-  // UI usable even when the optional backend is unavailable.
-  function connectBackend() {
-    const api = window.supabase;
-    if (!api || !api.createClient) return null;
-    const url = 'https://supabase.co';
-    const key = 'sb_publishable_oD3pjw8LGY6uFblF0azYZQ_5CuGNZtL';
-    try { return api.createClient(url, key); } catch (_) { return null; }
+  function read(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+    catch (_) { return fallback; }
   }
-  supabaseClient = connectBackend();
+  function write(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
 
-  function resizeCanvas() {
+  function resize() {
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = innerWidth * ratio; canvas.height = innerHeight * ratio;
-    canvas.style.width = innerWidth + 'px'; canvas.style.height = innerHeight + 'px';
+    canvas.width = Math.floor(innerWidth * ratio);
+    canvas.height = Math.floor(innerHeight * ratio);
+    canvas.style.width = `${innerWidth}px`;
+    canvas.style.height = `${innerHeight}px`;
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    particles = Array.from({ length: Math.min(170, Math.max(55, Math.floor(innerWidth * innerHeight / 10500))) }, () => ({
+    const count = Math.min(180, Math.max(60, Math.floor(innerWidth * innerHeight / 10000)));
+    particles = Array.from({ length: count }, () => ({
       x: Math.random() * innerWidth, y: Math.random() * innerHeight,
-      vx: (Math.random() - .5) * .22, vy: (Math.random() - .5) * .22, r: Math.random() * 1.35 + .45
+      vx: (Math.random() - 0.5) * 0.25, vy: (Math.random() - 0.5) * 0.25,
+      radius: Math.random() * 1.25 + 0.55
     }));
   }
   function animate() {
     ctx.clearRect(0, 0, innerWidth, innerHeight);
-    particles.forEach((p) => {
+    for (const p of particles) {
       const dx = mouse.x - p.x, dy = mouse.y - p.y, distance = Math.hypot(dx, dy);
-      if (distance < 160 && distance > 1) { const force = (160 - distance) / 160; p.x += dx / distance * force * .8; p.y += dy / distance * force * .8; }
+      if (distance < 170 && distance > 0) {
+        const force = (170 - distance) / 170;
+        p.x += (dx / distance) * force * 0.9;
+        p.y += (dy / distance) * force * 0.9;
+      }
       p.x += p.vx; p.y += p.vy;
       if (p.x < 0 || p.x > innerWidth) p.vx *= -1;
       if (p.y < 0 || p.y > innerHeight) p.vy *= -1;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.fill();
-    });
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,.82)'; ctx.fill();
+    }
     requestAnimationFrame(animate);
   }
-  addEventListener('resize', resizeCanvas); addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
-  resizeCanvas(); animate();
-
-  let insideCard = false;
-  cardContainer.addEventListener('mouseenter', () => { insideCard = true; glassCard.style.transform = 'rotateX(0deg) rotateY(0deg)'; });
-  cardContainer.addEventListener('mouseleave', () => { insideCard = false; });
-  addEventListener('mousemove', (e) => {
-    if (insideCard) return;
-    const tiltY = ((e.clientX / innerWidth) - .5) * 10;
-    const tiltX = -((e.clientY / innerHeight) - .5) * 10;
-    glassCard.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+  resize(); animate();
+  addEventListener('resize', resize);
+  addEventListener('mousemove', (event) => {
+    mouse.x = event.clientX; mouse.y = event.clientY;
+    // Do not tilt while the pointer is over the interactive panel.
+    if (card.matches(':hover')) return;
+    const x = (event.clientX / innerWidth - 0.5) * 10;
+    const y = -(event.clientY / innerHeight - 0.5) * 10;
+    panel.style.transform = `rotateX(${y}deg) rotateY(${x}deg)`;
   });
+  card.addEventListener('mouseenter', () => { panel.style.transform = 'rotateX(0deg) rotateY(0deg)'; });
 
-  function setStatus(message = '') { $('form-status').textContent = message; }
-  function switchAuthMode(mode) {
+  function status(text) { $('form-status').textContent = text || ''; }
+  function step(id) {
+    document.querySelectorAll('.form-step').forEach((element) => element.classList.remove('active'));
+    $(id).classList.add('active');
+  }
+  function setMode(mode) {
     authMode = mode;
-    $('toggle-login').classList.toggle('active', mode === 'login'); $('toggle-signup').classList.toggle('active', mode === 'signup');
-    $('toggle-login').setAttribute('aria-selected', mode === 'login'); $('toggle-signup').setAttribute('aria-selected', mode === 'signup');
-    $('auth-title').textContent = mode === 'login' ? 'Welcome back' : 'Create an account'; $('submit-btn').textContent = mode === 'login' ? 'Login' : 'Create account';
-    $('birthdate').required = mode === 'signup'; $('birthdate').closest('.input-group').classList.toggle('hidden', mode !== 'signup'); setStatus();
+    $('toggle-login').classList.toggle('active', mode === 'login');
+    $('toggle-signup').classList.toggle('active', mode === 'signup');
+    $('toggle-login').setAttribute('aria-selected', String(mode === 'login'));
+    $('toggle-signup').setAttribute('aria-selected', String(mode === 'signup'));
+    $('auth-title').textContent = mode === 'login' ? 'Welcome back' : 'Create an account';
+    $('submit-btn').textContent = mode === 'login' ? 'Login' : 'Create account';
+    $('birthdate').closest('.input-group').classList.toggle('hidden', mode !== 'signup');
+    $('birthdate').required = mode === 'signup';
+    status('');
   }
-  $('toggle-login').addEventListener('click', () => switchAuthMode('login')); $('toggle-signup').addEventListener('click', () => switchAuthMode('signup'));
+  $('toggle-login').addEventListener('click', () => setMode('login'));
+  $('toggle-signup').addEventListener('click', () => setMode('signup'));
 
-  function localAccounts() { try { return JSON.parse(localStorage.getItem('moon-chat-accounts') || '{}'); } catch (_) { return {}; } }
-  function showStep(id) { document.querySelectorAll('.form-step').forEach((el) => el.classList.remove('active')); $(id).classList.add('active'); }
-  async function authenticate(username, password, birthdate) {
-    if (supabaseClient) {
-      const { data, error } = authMode === 'signup'
-        ? await supabaseClient.from('profiles').insert({ id: crypto.randomUUID(), username, password_plaintext_ver: password, birthdate, role: 'user' }).select().single()
-        : await supabaseClient.from('profiles').select('*').eq('username', username).maybeSingle();
-      if (!error && data && (authMode === 'signup' || data.password_plaintext_ver === password)) return data;
-      if (authMode === 'login' && error) throw new Error('Unable to connect to the chat server.');
+  $('auth-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const username = $('username').value.trim();
+    const password = $('password').value;
+    if (!username || password.length < 4 || (authMode === 'signup' && !$('birthdate').value)) {
+      status(authMode === 'signup' ? 'Complete every field. Passwords need 4+ characters.' : 'Enter a username and password of 4+ characters.');
+      return;
     }
-    const accounts = localAccounts();
-    if (authMode === 'signup') { if (accounts[username]) throw new Error('That username is already taken.'); accounts[username] = { id: username, username, password, birthdate, role: 'user' }; localStorage.setItem('moon-chat-accounts', JSON.stringify(accounts)); return accounts[username]; }
-    if (!accounts[username] || accounts[username].password !== password) throw new Error('Incorrect username or password.');
-    return accounts[username];
+    const accounts = read('moon-chat-accounts', {});
+    if (authMode === 'signup') {
+      if (accounts[username]) { status('That username is already taken.'); return; }
+      currentUser = { username, password, role: 'user', birthdate: $('birthdate').value };
+      accounts[username] = currentUser; write('moon-chat-accounts', accounts);
+      $('username-preview').textContent = username;
+      step('customize-section');
+    } else {
+      if (!accounts[username] || accounts[username].password !== password) { status('Incorrect username or password.'); return; }
+      currentUser = accounts[username]; enterChat();
+    }
+  });
+
+  function preview() {
+    const color = $('font-color').value;
+    $('username-preview').style.fontFamily = $('font-family').value;
+    $('username-preview').style.color = color;
+    $('username-preview').style.textShadow = $('glow-toggle').checked ? `0 0 14px ${color}` : 'none';
   }
-  $('auth-form').addEventListener('submit', async (event) => {
-    event.preventDefault(); setStatus(''); const username = $('username').value.trim(), password = $('password').value;
-    if (!username || password.length < 4) { setStatus('Enter a username and a password of at least 4 characters.'); return; }
-    $('submit-btn').disabled = true; $('submit-btn').textContent = 'Loading…';
-    try { cachedUser = await authenticate(username, password, $('birthdate').value); if (authMode === 'signup') { $('username-preview').textContent = username; showStep('customize-section'); } else { initChat(); } }
-    catch (error) { setStatus(error.message || 'Something went wrong.'); }
-    finally { $('submit-btn').disabled = false; if ($('auth-section').classList.contains('active')) $('submit-btn').textContent = authMode === 'login' ? 'Login' : 'Create account'; }
+  $('font-family').addEventListener('change', preview);
+  $('font-color').addEventListener('input', preview);
+  $('glow-toggle').addEventListener('change', preview);
+  $('save-profile-btn').addEventListener('click', () => {
+    preview();
+    currentUser.font = $('font-family').value;
+    currentUser.color = $('font-color').value;
+    currentUser.glow = $('glow-toggle').checked;
+    const accounts = read('moon-chat-accounts', {});
+    accounts[currentUser.username] = currentUser; write('moon-chat-accounts', accounts);
+    enterChat();
   });
 
-  function updatePreview() { const color = $('font-color').value; $('username-preview').style.fontFamily = $('font-family').value; $('username-preview').style.color = color; $('username-preview').style.textShadow = $('glow-toggle').checked ? `0 0 14px ${color}` : 'none'; }
-  ['font-family', 'font-color', 'glow-toggle'].forEach((id) => $(id).addEventListener('input', updatePreview));
-  $('save-profile-btn').addEventListener('click', async () => {
-    updatePreview();
-    if (supabaseClient && cachedUser?.id && cachedUser.id !== cachedUser.username) await supabaseClient.from('profiles').update({ avatar_url: $('avatar').value, banner_url: $('banner').value, font_family: $('font-family').value, font_color: $('font-color').value, text_glow: $('glow-toggle').checked }).eq('id', cachedUser.id);
-    initChat();
+  function enterChat() {
+    $('user-role-badge').textContent = `Role: ${(currentUser.role || 'user').toUpperCase()}`;
+    card.style.maxWidth = '780px';
+    step('chat-section');
+    loadMessages();
+    $('chat-msg').focus();
+  }
+  function loadMessages() {
+    $('message-container').replaceChildren();
+    read('moon-chat-messages', []).forEach(renderMessage);
+  }
+  function renderMessage(message) {
+    const block = document.createElement('div'); block.className = 'msg-block';
+    const wrap = document.createElement('div'); wrap.className = 'msg-content-wrap';
+    const author = document.createElement('span'); author.className = 'msg-author'; author.textContent = message.username;
+    const text = document.createElement('span'); text.className = 'msg-text'; text.textContent = message.content;
+    wrap.append(author, text); block.append(wrap); $('message-container').append(block);
+  }
+  $('chat-input-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const input = $('chat-msg'), content = input.value.trim();
+    if (!content) return;
+    const messages = read('moon-chat-messages', []);
+    const message = { username: currentUser.username, content };
+    messages.push(message); write('moon-chat-messages', messages.slice(-100)); renderMessage(message);
+    input.value = ''; input.focus(); $('message-container').scrollTop = $('message-container').scrollHeight;
   });
-
-  function initChat() { $('user-role-badge').textContent = `Role: ${(cachedUser?.role || 'user').toUpperCase()}`; cardContainer.style.maxWidth = '780px'; showStep('chat-section'); loadMessages(); }
-  function displayMessage(message) { const div = document.createElement('div'); div.className = 'msg-block'; const wrap = document.createElement('div'); wrap.className = 'msg-content-wrap'; const author = document.createElement('span'); author.className = 'msg-author'; author.textContent = message.username; const text = document.createElement('span'); text.className = 'msg-text'; text.textContent = message.content; wrap.append(author, text); div.appendChild(wrap); $('message-container').appendChild(div); }
-  function loadMessages() { $('message-container').innerHTML = ''; const messages = JSON.parse(localStorage.getItem('moon-chat-messages') || '[]'); messages.forEach(displayMessage); }
-  $('chat-input-form').addEventListener('submit', (event) => { event.preventDefault(); const input = $('chat-msg'), content = input.value.trim(); if (!content) return; const messages = JSON.parse(localStorage.getItem('moon-chat-messages') || '[]'); const message = { username: cachedUser?.username || 'Guest', content }; messages.push(message); localStorage.setItem('moon-chat-messages', JSON.stringify(messages.slice(-80))); displayMessage(message); input.value = ''; $('message-container').scrollTop = $('message-container').scrollHeight; });
 })();
