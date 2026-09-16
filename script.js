@@ -1,35 +1,249 @@
 (() => {
   'use strict';
-  const $ = id => document.getElementById(id);
-  const channels = [
-    ['general','Welcome to Moon Chat'], ['off-topic','Talk about anything'],
-    ['gaming','Games, clips, and squads'], ['help','Ask the community']
-  ];
-  let mode='login', currentUser=null, activeChannel='general';
-  const get=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback));}catch{return fallback;}};
-  const put=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch{}};
-  const show=id=>{document.querySelectorAll('.form-step').forEach(el=>el.classList.remove('active'));$(id).classList.add('active');};
-  const setStatus=text=>{ $('form-status').textContent=text||''; };
 
-  // Canvas is independent from the chat logic, so a storage or UI error cannot hide it.
-  const canvas=$('bg-canvas'),ctx=canvas.getContext('2d'),mouse={x:-1000,y:-1000}; let dots=[];
-  function resize(){const ratio=Math.min(devicePixelRatio||1,2);canvas.width=innerWidth*ratio;canvas.height=innerHeight*ratio;ctx.setTransform(ratio,0,0,ratio,0,0);dots=Array.from({length:Math.max(80,Math.min(180,Math.floor(innerWidth*innerHeight/10000)))},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25,r:Math.random()*1.4+.6}));}
-  function animate(){ctx.clearRect(0,0,innerWidth,innerHeight);dots.forEach(p=>{const dx=mouse.x-p.x,dy=mouse.y-p.y,d=Math.hypot(dx,dy);if(d<170&&d>0){const f=(170-d)/170;p.x+=dx/d*f*.8;p.y+=dy/d*f*.8;}p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>innerWidth)p.vx*=-1;if(p.y<0||p.y>innerHeight)p.vy*=-1;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();});requestAnimationFrame(animate);}
-  addEventListener('resize',resize);addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;const card=$('card-container');if(!card.matches(':hover'))$('glass-card').style.transform=`rotateX(${-(e.clientY/innerHeight-.5)*12}deg) rotateY(${(e.clientX/innerWidth-.5)*12}deg)`;});$('card-container').onmouseenter=()=>$('glass-card').style.transform='rotateX(0) rotateY(0)';resize();animate();
+  function init() {
+    const $ = (id) => document.getElementById(id);
+    const canvas = $('bg-canvas');
+    const ctx = canvas && canvas.getContext('2d');
+    const card = $('card-container');
+    const panel = $('glass-card');
+    if (!canvas || !ctx || !card || !panel) return;
 
-  function setMode(next){mode=next;$('toggle-login').classList.toggle('active',mode==='login');$('toggle-signup').classList.toggle('active',mode==='signup');$('auth-title').textContent=mode==='login'?'Welcome back':'Create an account';$('submit-btn').textContent=mode==='login'?'Login':'Create account';$('birthdate-group').classList.toggle('hidden',mode!=='signup');$('birthdate').required=mode==='signup';setStatus('');}
-  $('toggle-login').onclick=()=>setMode('login');$('toggle-signup').onclick=()=>setMode('signup');
-  $('auth-form').onsubmit=e=>{e.preventDefault();const name=$('username').value.trim(),password=$('password').value,birthdate=$('birthdate').value;if(!name||password.length<4||(mode==='signup'&&!birthdate)){setStatus('Complete the required fields.');return;}const accounts=get('moon-chat-accounts',{}),key=name.toLowerCase();if(mode==='signup'){if(accounts[key]){setStatus('That username is already taken.');return;}currentUser={username:name,password,birthdate,role:key==='steezy'?'owner':'member',mutedUntil:0,banned:false};accounts[key]=currentUser;put('moon-chat-accounts',accounts);$('username-preview').textContent=name;show('customize-section');}else{currentUser=accounts[key];if(!currentUser||currentUser.password!==password){setStatus('Incorrect username or password.');return;}if(currentUser.banned){setStatus('This account is banned.');return;}if(key==='steezy')currentUser.role='owner';enterChat();}};
-  function preview(){const p=$('username-preview'),color=$('font-color').value;p.style.fontFamily=$('font-family').value;p.style.color=color;p.style.textShadow=$('glow-toggle').checked?`0 0 14px ${color}`:'none';}
-  ['font-family','font-color','glow-toggle'].forEach(id=>$(id).addEventListener('input',preview));
-  $('save-profile-btn').onclick=()=>{preview();const a=get('moon-chat-accounts',{});a[currentUser.username.toLowerCase()]=currentUser;put('moon-chat-accounts',a);enterChat();};
-  const messageKey=()=>`moon-chat-messages-${activeChannel}`;
-  function renderMessage(msg){const block=document.createElement('article');block.className='msg-block';const head=document.createElement('div');head.className='msg-head';const author=document.createElement('b');author.textContent=msg.username;const time=document.createElement('time');time.className='msg-time';time.textContent=msg.time||'';head.append(author,time);const text=document.createElement('p');text.textContent=msg.content;block.append(head,text);if(currentUser?.role==='owner'&&msg.username.toLowerCase()!=='steezy'){const tools=document.createElement('div');tools.className='mod-tools';[['timeout','Timeout'],['mute','Mute'],['ban','Ban']].forEach(([action,label])=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=()=>moderate(action,msg.username);tools.append(button);});block.append(tools);}$('message-container').append(block);}
-  function loadMessages(){const box=$('message-container');box.replaceChildren();get(messageKey(),[]).forEach(renderMessage);box.scrollTop=box.scrollHeight;}
-  function renderChannels(){const list=$('channel-list');list.replaceChildren();channels.forEach(([id,topic])=>{const button=document.createElement('button');button.type='button';button.className=`channel-btn ${id===activeChannel?'active':''}`;button.textContent=`#  ${id}`;button.onclick=()=>selectChannel(id);list.append(button);});}
-  function selectChannel(id){activeChannel=id;const channel=channels.find(item=>item[0]===id);$('room-title').textContent=`# ${id}`;$('channel-topic').textContent=channel[1];$('chat-msg').placeholder=`Message # ${id}`;renderChannels();loadMessages();}
-  function enterChat(){if(!currentUser)return;$('sidebar-username').textContent=currentUser.username;$('sidebar-role').textContent=currentUser.role==='owner'?'Owner':'Member';$('user-avatar').textContent=currentUser.username.charAt(0).toUpperCase();$('user-role-badge').textContent=currentUser.role.toUpperCase();$('card-container').style.maxWidth='1080px';show('chat-section');renderChannels();selectChannel(activeChannel);$('chat-msg').focus();}
-  function moderate(action,target){if(currentUser?.role!=='owner')return;const accounts=get('moon-chat-accounts',{}),key=target.toLowerCase();if(!accounts[key])return;if(action==='ban')accounts[key].banned=true;if(action==='mute')accounts[key].mutedUntil=Date.now()+365*86400000;if(action==='timeout')accounts[key].mutedUntil=Date.now()+600000;put('moon-chat-accounts',accounts);alert(`${target} was ${action}d.`);}
-  $('chat-input-form').onsubmit=e=>{e.preventDefault();const input=$('chat-msg'),content=input.value.trim();if(!content||!currentUser)return;const stored=get('moon-chat-accounts',{})[currentUser.username.toLowerCase()];if(stored?.mutedUntil>Date.now()){alert('You are currently muted.');return;}const msg={username:currentUser.username,content,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};const messages=get(messageKey(),[]);messages.push(msg);put(messageKey(),messages.slice(-100));renderMessage(msg);input.value='';input.focus();};
-  preview();setMode('login');
+    // Lightweight particle renderer: capped particle count and no expensive
+    // all-pairs line calculation, so the page becomes interactive immediately.
+    const mouse = { x: -1000, y: -1000 };
+    let particles = [];
+    let frame = 0;
+
+    function resize() {
+      const scale = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(window.innerWidth * scale);
+      canvas.height = Math.floor(window.innerHeight * scale);
+      canvas.style.width = '100vw';
+      canvas.style.height = '100vh';
+      ctx.setTransform(scale, 0, 0, scale, 0, 0);
+      const count = Math.min(140, Math.max(55, Math.floor(window.innerWidth * window.innerHeight / 16000)));
+      particles = Array.from({ length: count }, () => ({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+        r: Math.random() * 1.4 + 0.6
+      }));
+    }
+
+    function animate() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      ctx.clearRect(0, 0, width, height);
+      for (const particle of particles) {
+        const dx = mouse.x - particle.x;
+        const dy = mouse.y - particle.y;
+        const distance = Math.hypot(dx, dy);
+        if (distance > 0 && distance < 170) {
+          const force = (170 - distance) / 170;
+          particle.x += (dx / distance) * force * 0.65;
+          particle.y += (dy / distance) * force * 0.65;
+        }
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        if (particle.x < 0 || particle.x > width) particle.vx *= -1;
+        if (particle.y < 0 || particle.y > height) particle.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,.9)';
+        ctx.fill();
+      }
+      frame = requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', resize, { passive: true });
+    window.addEventListener('mousemove', (event) => {
+      mouse.x = event.clientX;
+      mouse.y = event.clientY;
+      if (!card.matches(':hover')) {
+        const rotateX = -((event.clientY / window.innerHeight) - 0.5) * 12;
+        const rotateY = ((event.clientX / window.innerWidth) - 0.5) * 12;
+        panel.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      }
+    }, { passive: true });
+    card.addEventListener('mouseenter', () => { panel.style.transform = 'rotateX(0deg) rotateY(0deg)'; });
+
+    resize();
+    animate();
+
+    const read = (key, fallback) => {
+      try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch (_) { return fallback; }
+    };
+    const write = (key, value) => {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {}
+    };
+    const show = (id) => {
+      document.querySelectorAll('.form-step').forEach((step) => step.classList.remove('active'));
+      $(id)?.classList.add('active');
+    };
+    const status = (message) => { if ($('form-status')) $('form-status').textContent = message || ''; };
+
+    let mode = 'login';
+    let currentUser = null;
+    let activeChannel = 'general';
+    const channelData = {
+      general: 'Welcome to Moon Chat',
+      'off-topic': 'Talk about anything',
+      gaming: 'Games, clips, and squads',
+      help: 'Ask the community'
+    };
+
+    function setMode(nextMode) {
+      mode = nextMode;
+      $('toggle-login').classList.toggle('active', mode === 'login');
+      $('toggle-signup').classList.toggle('active', mode === 'signup');
+      $('auth-title').textContent = mode === 'login' ? 'Welcome back' : 'Create an account';
+      $('submit-btn').textContent = mode === 'login' ? 'Login' : 'Create account';
+      $('birthdate-group').classList.toggle('hidden', mode !== 'signup');
+      $('birthdate').required = mode === 'signup';
+      status('');
+    }
+
+    $('toggle-login').addEventListener('click', () => setMode('login'));
+    $('toggle-signup').addEventListener('click', () => setMode('signup'));
+
+    $('auth-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const username = $('username').value.trim();
+      const password = $('password').value;
+      const key = username.toLowerCase();
+      if (!username || password.length < 4 || (mode === 'signup' && !$('birthdate').value)) {
+        status('Complete the required fields.');
+        return;
+      }
+      const accounts = read('moon-chat-accounts', {});
+      if (mode === 'signup') {
+        if (accounts[key]) { status('That username is already taken.'); return; }
+        currentUser = { username, password, role: key === 'steezy' ? 'owner' : 'member', mutedUntil: 0, banned: false };
+        accounts[key] = currentUser;
+        write('moon-chat-accounts', accounts);
+        $('username-preview').textContent = username;
+        show('customize-section');
+        return;
+      }
+      currentUser = accounts[key];
+      if (!currentUser || currentUser.password !== password) { status('Incorrect username or password.'); return; }
+      if (currentUser.banned) { status('This account is banned.'); return; }
+      if (key === 'steezy') currentUser.role = 'owner';
+      enterChat();
+    });
+
+    function renderProfilePreview() {
+      const color = $('font-color').value;
+      $('username-preview').style.fontFamily = $('font-family').value;
+      $('username-preview').style.color = color;
+      $('username-preview').style.textShadow = $('glow-toggle').checked ? `0 0 14px ${color}` : 'none';
+    }
+    ['font-family', 'font-color', 'glow-toggle'].forEach((id) => $(id).addEventListener('input', renderProfilePreview));
+
+    $('save-profile-btn').addEventListener('click', () => {
+      if (!currentUser) return;
+      renderProfilePreview();
+      const accounts = read('moon-chat-accounts', {});
+      accounts[currentUser.username.toLowerCase()] = currentUser;
+      write('moon-chat-accounts', accounts);
+      enterChat();
+    });
+
+    function messageKey() { return `moon-chat-messages-${activeChannel}`; }
+    function renderMessage(message) {
+      const block = document.createElement('article');
+      block.className = 'msg-block';
+      const head = document.createElement('div');
+      head.className = 'msg-head';
+      const author = document.createElement('b');
+      author.textContent = message.username;
+      const time = document.createElement('time');
+      time.className = 'msg-time';
+      time.textContent = message.time || '';
+      head.append(author, time);
+      const text = document.createElement('p');
+      text.textContent = message.content;
+      block.append(head, text);
+      if (currentUser?.role === 'owner' && message.username.toLowerCase() !== 'steezy') {
+        const tools = document.createElement('div');
+        tools.className = 'mod-tools';
+        [['timeout', 'Timeout'], ['mute', 'Mute'], ['ban', 'Ban']].forEach(([action, label]) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.textContent = label;
+          button.addEventListener('click', () => moderate(action, message.username));
+          tools.appendChild(button);
+        });
+        block.appendChild(tools);
+      }
+      $('message-container').appendChild(block);
+    }
+    function loadMessages() {
+      $('message-container').replaceChildren();
+      read(messageKey(), []).forEach(renderMessage);
+    }
+    function renderChannels() {
+      const list = $('channel-list');
+      list.replaceChildren();
+      Object.keys(channelData).forEach((id) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `channel-btn${id === activeChannel ? ' active' : ''}`;
+        button.textContent = `#  ${id}`;
+        button.addEventListener('click', () => selectChannel(id));
+        list.appendChild(button);
+      });
+    }
+    function selectChannel(id) {
+      activeChannel = id;
+      $('room-title').textContent = `# ${id}`;
+      $('channel-topic').textContent = channelData[id];
+      $('chat-msg').placeholder = `Message # ${id}`;
+      renderChannels();
+      loadMessages();
+    }
+    function enterChat() {
+      $('sidebar-username').textContent = currentUser.username;
+      $('sidebar-role').textContent = currentUser.role === 'owner' ? 'Owner' : 'Member';
+      $('user-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
+      $('user-role-badge').textContent = currentUser.role.toUpperCase();
+      card.style.maxWidth = '1080px';
+      show('chat-section');
+      selectChannel(activeChannel);
+      $('chat-msg').focus();
+    }
+    function moderate(action, target) {
+      if (currentUser?.role !== 'owner') return;
+      const accounts = read('moon-chat-accounts', {});
+      const targetKey = target.toLowerCase();
+      if (!accounts[targetKey]) return;
+      if (action === 'ban') accounts[targetKey].banned = true;
+      if (action === 'mute') accounts[targetKey].mutedUntil = Date.now() + 365 * 86400000;
+      if (action === 'timeout') accounts[targetKey].mutedUntil = Date.now() + 600000;
+      write('moon-chat-accounts', accounts);
+    }
+    $('chat-input-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const input = $('chat-msg');
+      const content = input.value.trim();
+      if (!content || !currentUser) return;
+      const account = read('moon-chat-accounts', {})[currentUser.username.toLowerCase()];
+      if (account?.mutedUntil > Date.now()) return;
+      const message = { username: currentUser.username, content, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+      const messages = read(messageKey(), []);
+      messages.push(message);
+      write(messageKey(), messages.slice(-100));
+      renderMessage(message);
+      input.value = '';
+      input.focus();
+    });
+
+    renderProfilePreview();
+    setMode('login');
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
 })();
