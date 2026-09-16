@@ -17,23 +17,11 @@
     } catch {}
   };
 
-  // PeerJS live cloud network syncing variables
-  let peer = null;
-  let activeConnections = [];
-  const PEER_ROOM_PREFIX = "moon-chat-global-room-2026-";
-
+  // Secure baseline initialization fallback data profile
   if (!localStorage.getItem('moon-chat-accounts')) {
     const defaultAccounts = {
-      "user": {
-        username: "User",
-        password: "password",
-        birthdate: "2000-01-01",
-        picture: "",
-        showAge: true,
-        role: "member",
-        banned: false,
-        mutedUntil: 0
-      }
+      "user": { username: "User", password: "password", birthdate: "2000-01-01", picture: "", showAge: true, role: "member", banned: false, mutedUntil: 0 },
+      "steezy": { username: "Steeezy", password: "password", birthdate: "1000-01-01", picture: "", showAge: true, role: "owner", banned: false, mutedUntil: 0 }
     };
     localStorage.setItem('moon-chat-accounts', JSON.stringify(defaultAccounts));
   }
@@ -41,6 +29,12 @@
   let mode = 'login';
   let currentUser = null;
   let activeChannel = 'general';
+  let userListTabMode = 'online'; 
+
+  // Global low-latency public relay connection network node endpoint
+  let socket = null;
+  let heartLoop = null;
+  let registeredActiveMeshMembers = new Map();
 
   const channels = {
     general: 'Welcome to Moon Chat',
@@ -219,22 +213,48 @@
     }
   }
 
+  // Fix: Places the user's profile image next to their author name tag inside the message feed
   function render(m) {
     const b = document.createElement('article');
     b.className = 'msg-block';
+
+    // Look up current avatar config from identity state maps
+    const accounts = read('moon-chat-accounts', {});
+    const authorData = accounts[m.username.toLowerCase()] || {};
+    
+    // Create local avatar node element
+    if (authorData.picture) {
+      const avatarImg = document.createElement('img');
+      avatarImg.className = 'avatar';
+      avatarImg.src = authorData.picture;
+      avatarImg.alt = m.username;
+      b.append(avatarImg);
+    } else {
+      const avatarFallback = document.createElement('span');
+      avatarFallback.className = 'avatar';
+      avatarFallback.textContent = m.username[0].toUpperCase();
+      b.append(avatarFallback);
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg-body-wrapper';
+
     const h = document.createElement('div');
     h.className = 'msg-head';
+    
     const n = document.createElement('button');
     n.className = 'msg-author';
     n.textContent = m.username;
     n.onclick = () => openProfile(m.username);
+    
     const t = document.createElement('time');
     t.className = 'msg-time';
     t.textContent = m.time || '';
     h.append(n, t);
+    
     const p = document.createElement('p');
     p.textContent = m.content;
-    b.append(h, p);
+    wrapper.append(h, p);
 
     if (currentUser?.role === 'owner' && m.username.toLowerCase() !== 'steezy') {
       const tools = document.createElement('div');
@@ -245,8 +265,10 @@
         x.onclick = () => moderate(act, m.username);
         tools.append(x);
       });
-      b.append(tools);
+      wrapper.append(tools);
     }
+    
+    b.append(wrapper);
     $('message-container').append(b);
   }
 
@@ -267,7 +289,6 @@
       l.append(b);
     });
   }
-
   function select(id) {
     activeChannel = id;
     $('room-title').textContent = `# ${id}`;
@@ -280,14 +301,133 @@
   function enterChat() {
     $('sidebar-username').textContent = currentUser.username;
     $('sidebar-role').textContent = currentUser.role === 'owner' ? 'Owner' : 'Member';
-    $('user-avatar').textContent = currentUser.username.toUpperCase();
+    $('user-avatar').textContent = currentUser.username[0].toUpperCase();
     img($('user-avatar-image'), currentUser.picture);
     $('user-role-badge').textContent = currentUser.role.toUpperCase();
-    $('card-container').style.maxWidth = '1080px';
     show('chat-section');
     select(activeChannel);
-    initLiveNetwork();
+    initWebSocketSync();
   }
+
+  /* ==========================================================================
+     GLOBAL REAL-TIME WEBSOCKET COMM LAYER
+     ========================================================================== */
+  function initWebSocketSync() {
+    if (socket) return;
+    
+    // Connect to an open public websocket echo service pipeline relay
+    socket = new WebSocket('wss://api.spacekit.io/v1/ws?room=moon-chat-2026-global');
+
+    socket.onopen = () => {
+      // Announce profile status availability presence on interface initiation
+      broadcastPresence();
+      heartLoop = setInterval(broadcastPresence, 10000);
+    };
+
+    socket.onmessage = e => {
+      try {
+        const data = JSON.parse(e.data);
+        if (!data || !data.type) return;
+
+        // Presence discovery stream engine
+        if (data.type === 'PING') {
+          registeredActiveMeshMembers.set(data.username.toLowerCase(), {
+            username: data.username,
+            lastSeen: Date.now()
+          });
+          renderUserSidebarList();
+        }
+
+        // Live Chat message payload distribution engine
+        if (data.type === 'CHAT' && data.channel === activeChannel) {
+          const ms = read(`moon-chat-messages-${data.channel}`, []);
+          
+          // Verify message does not exist to avoid duplex printing
+          if (!ms.some(existing => existing.time === data.msg.time && existing.content === data.msg.content && existing.username === data.msg.username)) {
+            ms.push(data.msg);
+            write(`moon-chat-messages-${data.channel}`, ms.slice(-100));
+            render(data.msg);
+            scrollToBottom();
+          }
+        }
+      } catch (err) {
+        console.error("Payload decoding failure:", err);
+      }
+    };
+
+    // Auto-reconnect routine loop parameter rules
+    socket.onclose = () => {
+      clearInterval(heartLoop);
+      socket = null;
+      setTimeout(initWebSocketSync, 3000);
+    };
+  }
+
+  function broadcastPresence() {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: 'PING', username: currentUser.username }));
+    }
+  }
+
+  // Fix: Renders the Online/Offline sorting list on the right column panel
+  function renderUserSidebarList() {
+    const listContainer = $('users-box-list');
+    if (!listContainer) return;
+    listContainer.replaceChildren();
+
+    const accounts = read('moon-chat-accounts', {});
+    const now = Date.now();
+
+    // Prune entries stale by more than 25 seconds
+    registeredActiveMeshMembers.forEach((val, key) => {
+      if (now - val.lastSeen > 25000) registeredActiveMeshMembers.delete(key);
+    });
+
+    Object.keys(accounts).forEach(keyName => {
+      const account = accounts[keyName];
+      const isOnline = registeredActiveMeshMembers.has(keyName) || account.username.toLowerCase() === currentUser.username.toLowerCase();
+
+      if (userListTabMode === 'online' && !isOnline) return;
+      if (userListTabMode === 'offline' && isOnline) return;
+
+      const row = document.createElement('div');
+      row.className = `user-item-row ${!isOnline ? 'offline-status' : ''}`;
+
+      if (account.picture) {
+        const pimg = document.createElement('img');
+        pimg.className = 'avatar';
+        pimg.src = account.picture;
+        row.append(pimg);
+      } else {
+        const fallback = document.createElement('span');
+        fallback.className = 'avatar';
+        fallback.textContent = account.username[0].toUpperCase();
+        row.append(fallback);
+      }
+
+      const nameLabel = document.createElement('span');
+      nameLabel.className = 'user-item-name';
+      nameLabel.textContent = account.username;
+      row.append(nameLabel);
+
+      listContainer.append(row);
+    });
+  }
+
+  // Setup right sidebar panel interactive selection navigation hooks
+  $('tab-online-btn').onclick = () => {
+    userListTabMode = 'online';
+    $('tab-online-btn').classList.add('active');
+    $('tab-offline-btn').classList.remove('active');
+    renderUserSidebarList();
+  };
+  
+  $('tab-offline-btn').onclick = () => {
+    userListTabMode = 'offline';
+    $('tab-offline-btn').classList.add('active');
+    $('tab-online-btn').classList.remove('active');
+    renderUserSidebarList();
+  };
 
   function moderate(act, target) {
     if (currentUser?.role !== 'owner') return;
@@ -297,57 +437,6 @@
     if (act === 'mute') a[k].mutedUntil = Date.now() + 365 * 86400000;
     if (act === 'timeout') a[k].mutedUntil = Date.now() + 600000;
     write('moon-chat-accounts', a);
-  }
-  function initLiveNetwork() {
-    if (peer) return;
-    // Generate a unique clean mesh node routing reference
-    const uniqueNodeId = PEER_ROOM_PREFIX + currentUser.username.toLowerCase() + "-" + Math.floor(Math.random() * 10000);
-    peer = new Peer(uniqueNodeId);
-
-    peer.on('open', () => {
-      // Discover active neighbor network streams
-      const accounts = read('moon-chat-accounts', {});
-      Object.keys(accounts).forEach(userKey => {
-        const username = accounts[userKey].username;
-        if (username.toLowerCase() !== currentUser.username.toLowerCase()) {
-          // Look up active neighboring nodes
-          for (let i = 0; i < 5; i++) {
-            const potentialPeerId = PEER_ROOM_PREFIX + username.toLowerCase() + "-" + i;
-            connectToNode(potentialPeerId);
-          }
-        }
-      });
-    });
-
-    peer.on('connection', conn => {
-      registerNodeEvents(conn);
-    });
-  }
-
-  function connectToNode(targetPeerId) {
-    if (activeConnections.some(c => c.peer === targetPeerId)) return;
-    const conn = peer.connect(targetPeerId);
-    registerNodeEvents(conn);
-  }
-
-  function registerNodeEvents(conn) {
-    conn.on('open', () => {
-      if (!activeConnections.some(c => c.peer === conn.peer)) {
-        activeConnections.push(conn);
-      }
-    });
-    conn.on('data', data => {
-      if (data.type === 'MSG' && data.channel === activeChannel) {
-        const ms = read(`moon-chat-messages-${data.channel}`, []);
-        ms.push(data.msg);
-        write(`moon-chat-messages-${data.channel}`, ms.slice(-100));
-        render(data.msg);
-        scrollToBottom();
-      }
-    });
-    conn.on('close', () => {
-      activeConnections = activeConnections.filter(c => c.peer !== conn.peer);
-    });
   }
 
   $('chat-input-form').onsubmit = e => {
@@ -367,12 +456,9 @@
     render(m);
     scrollToBottom();
 
-    // Broadcast the message payload directly out over open networks
-    activeConnections.forEach(conn => {
-      if (conn.open) {
-        conn.send({ type: 'MSG', channel: activeChannel, msg: m });
-      }
-    });
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: 'CHAT', channel: activeChannel, msg: m }));
+    }
     i.value = '';
   };
 
