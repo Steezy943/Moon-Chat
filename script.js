@@ -17,7 +17,6 @@
     } catch {}
   };
 
-  // Secure baseline initialization fallback data profile
   if (!localStorage.getItem('moon-chat-accounts')) {
     const defaultAccounts = {
       "user": { username: "User", password: "password", birthdate: "2000-01-01", picture: "", showAge: true, role: "member", banned: false, mutedUntil: 0 },
@@ -31,7 +30,6 @@
   let activeChannel = 'general';
   let userListTabMode = 'online'; 
 
-  // Global low-latency public relay connection network node endpoint
   let socket = null;
   let heartLoop = null;
   let registeredActiveMeshMembers = new Map();
@@ -213,16 +211,13 @@
     }
   }
 
-  // Fix: Places the user's profile image next to their author name tag inside the message feed
   function render(m) {
     const b = document.createElement('article');
     b.className = 'msg-block';
 
-    // Look up current avatar config from identity state maps
     const accounts = read('moon-chat-accounts', {});
     const authorData = accounts[m.username.toLowerCase()] || {};
     
-    // Create local avatar node element
     if (authorData.picture) {
       const avatarImg = document.createElement('img');
       avatarImg.className = 'avatar';
@@ -232,7 +227,7 @@
     } else {
       const avatarFallback = document.createElement('span');
       avatarFallback.className = 'avatar';
-      avatarFallback.textContent = m.username[0].toUpperCase();
+      avatarFallback.textContent = m.username.toUpperCase();
       b.append(avatarFallback);
     }
 
@@ -301,7 +296,7 @@
   function enterChat() {
     $('sidebar-username').textContent = currentUser.username;
     $('sidebar-role').textContent = currentUser.role === 'owner' ? 'Owner' : 'Member';
-    $('user-avatar').textContent = currentUser.username[0].toUpperCase();
+    $('user-avatar').textContent = currentUser.username.toUpperCase();
     img($('user-avatar-image'), currentUser.picture);
     $('user-role-badge').textContent = currentUser.role.toUpperCase();
     show('chat-section');
@@ -309,17 +304,12 @@
     initWebSocketSync();
   }
 
-  /* ==========================================================================
-     GLOBAL REAL-TIME WEBSOCKET COMM LAYER
-     ========================================================================== */
   function initWebSocketSync() {
     if (socket) return;
     
-    // Connect to an open public websocket echo service pipeline relay
     socket = new WebSocket('wss://api.spacekit.io/v1/ws?room=moon-chat-2026-global');
 
     socket.onopen = () => {
-      // Announce profile status availability presence on interface initiation
       broadcastPresence();
       heartLoop = setInterval(broadcastPresence, 10000);
     };
@@ -329,7 +319,6 @@
         const data = JSON.parse(e.data);
         if (!data || !data.type) return;
 
-        // Presence discovery stream engine
         if (data.type === 'PING') {
           registeredActiveMeshMembers.set(data.username.toLowerCase(), {
             username: data.username,
@@ -338,11 +327,9 @@
           renderUserSidebarList();
         }
 
-        // Live Chat message payload distribution engine
         if (data.type === 'CHAT' && data.channel === activeChannel) {
           const ms = read(`moon-chat-messages-${data.channel}`, []);
           
-          // Verify message does not exist to avoid duplex printing
           if (!ms.some(existing => existing.time === data.msg.time && existing.content === data.msg.content && existing.username === data.msg.username)) {
             ms.push(data.msg);
             write(`moon-chat-messages-${data.channel}`, ms.slice(-100));
@@ -354,22 +341,6 @@
         console.error("Payload decoding failure:", err);
       }
     };
-
-    // Auto-reconnect routine loop parameter rules
-    socket.onclose = () => {
-      clearInterval(heartLoop);
-      socket = null;
-      setTimeout(initWebSocketSync, 3000);
-    };
-  }
-
-  function broadcastPresence() {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: 'PING', username: currentUser.username }));
-    }
-  }
-
-  // Fix: Renders the Online/Offline sorting list on the right column panel
   function renderUserSidebarList() {
     const listContainer = $('users-box-list');
     if (!listContainer) return;
@@ -378,7 +349,6 @@
     const accounts = read('moon-chat-accounts', {});
     const now = Date.now();
 
-    // Prune entries stale by more than 25 seconds
     registeredActiveMeshMembers.forEach((val, key) => {
       if (now - val.lastSeen > 25000) registeredActiveMeshMembers.delete(key);
     });
@@ -401,7 +371,7 @@
       } else {
         const fallback = document.createElement('span');
         fallback.className = 'avatar';
-        fallback.textContent = account.username[0].toUpperCase();
+        fallback.textContent = account.username.toUpperCase();
         row.append(fallback);
       }
 
@@ -414,7 +384,6 @@
     });
   }
 
-  // Setup right sidebar panel interactive selection navigation hooks
   $('tab-online-btn').onclick = () => {
     userListTabMode = 'online';
     $('tab-online-btn').classList.add('active');
@@ -504,5 +473,38 @@
     $('settings-panel').classList.add('hidden');
   };
 
+  /* --- FORMS INTERACTIVE ARROW NAV SCROLL CLICK LISTENERS --- */
+  document.querySelectorAll('.scroll-nav-arrow-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      e.preventDefault();
+      const parentId = btn.getAttribute('data-target');
+      const targetFormContainer = $(parentId);
+      if (!targetFormContainer) return;
+      const stepDistance = btn.classList.contains('down') ? 140 : -140;
+      targetFormContainer.scrollBy({ top: stepDistance, behavior: 'smooth' });
+    };
+  });
+
+  /* --- TEASER ROADMAP TOGGLE POPUP TRIGGERS --- */
+  $('global-coming-soon-trigger').onclick = () => {
+    $('coming-soon-panel').classList.remove('hidden');
+  };
+  $('close-coming-soon').onclick = () => {
+    $('coming-soon-panel').classList.add('hidden');
+  };
+
   setMode('login');
 })();
+
+    socket.onclose = () => {
+      clearInterval(heartLoop);
+      socket = null;
+      setTimeout(initWebSocketSync, 3000);
+    };
+  }
+
+  function broadcastPresence() {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: 'PING', username: currentUser.username }));
+    }
+  }
