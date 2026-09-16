@@ -5,70 +5,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#000">
   <title>Moon Chat</title>
-  <link rel="stylesheet" href="./style.css?v=8">
+  <link rel="stylesheet" href="./style.css?v=9">
   <link rel="stylesheet" href="./disclaimer.css?v=1">
-  <script src="./script.js?v=8" defer></script>
+  <script src="./script.js?v=9" defer></script>
   <script src="./disclaimer.js?v=1" defer></script>
 </head>
 <body>
 
   <canvas id="bg-canvas" aria-hidden="true"></canvas>
 
+  <!-- Global Feature Teaser Component Hook Trigger -->
+  <button id="global-coming-soon-trigger" class="global-coming-soon-trigger" type="button">✨ Coming Soon</button>
+
   <main id="card-container" class="card-container">
     <section id="glass-card" class="glass-card">
 
-      <!-- AUTHENTICATION CARD SECTION -->
-      <div id="auth-section" class="form-step active auth-card">
-        <div class="brand-mark">✦</div>
-        <p class="eyebrow">MOON CHAT</p>
-        <h1 id="auth-title">Welcome back</h1>
-        <p class="subtitle">A quiet place to connect.</p>
-
-        <div class="toggle-container">
-          <button id="toggle-login" class="toggle-btn active" type="button">Login</button>
-          <button id="toggle-signup" class="toggle-btn" type="button">Sign up</button>
+      <!-- ==========================================================================
+           1. AUTHENTICATION (SIGN UP & LOGIN INTERACTIVE PANEL)
+           ========================================================================== -->
+      <div id="auth-section" class="form-step active auth-container-wrapper">
+        <!-- Interactive Directional Navigation Core Buttons -->
+        <div class="form-scroll-navigation-bar">
+          <button class="scroll-nav-arrow-btn up" type="button" data-target="auth-section">▲</button>
+          <button class="scroll-nav-arrow-btn down" type="button" data-target="auth-section">▼</button>
         </div>
+        
+        <div class="auth-card">
+          <div class="brand-mark">✦</div>
+          <p class="eyebrow">MOON CHAT</p>
+          <h1 id="auth-title">Welcome back</h1>
+          <p class="subtitle">A quiet place to connect.</p>
 
-        <form id="auth-form">
-          <label class="field">Username<input id="username" required autocomplete="username" placeholder="Enter username"></label>
-          <label class="field">Password<input id="password" type="password" minlength="4" required autocomplete="current-password" placeholder="Enter password"></label>
-          <label id="birthdate-group" class="field hidden">Birthdate<input id="birthdate" type="date"></label>
-          <p id="form-status" class="form-status"></p>
-          <button id="submit-btn" class="action-btn">Login</button>
-        </form>
+          <div class="toggle-container">
+            <button id="toggle-login" class="toggle-btn active" type="button">Login</button>
+            <button id="toggle-signup" class="toggle-btn" type="button">Sign up</button>
+          </div>
+
+          <form id="auth-form">
+            <label class="field">Username<input id="username" required autocomplete="username" placeholder="Enter username"></label>
+            <label class="field">Password<input id="password" type="password" minlength="4" required autocomplete="current-password" placeholder="Enter password"></label>
+            <label id="birthdate-group" class="field hidden">Birthdate<input id="birthdate" type="date"></label>
+            <p id="form-status" class="form-status"></p>
+            <button id="submit-btn" class="action-btn">Login</button>
+          </form>
+        </div>
       </div>
 
-      <!-- PROFILE SELECTION STEP -->
-      <div id="customize-section" class="form-step auth-card">
-        <p class="eyebrow">PROFILE</p>
-        <h1>Customize profile</h1>
-        <p class="subtitle">Set your picture, name style, and age visibility.</p>
-        
-        <label class="field">Profile picture URL<input id="profile-picture" type="url" placeholder="https://example.com"></label>
-        <label class="field">Username font
-          <select id="font-family">
-            <option>Segoe UI, sans-serif</option>
-            <option>Georgia, serif</option>
-            <option>Courier New, monospace</option>
-            <option>Impact, sans-serif</option>
-            <option>system-ui, sans-serif</option>
-          </select>
-        </label>
-        <label class="field">Username color<input id="font-color" type="color" value="#ffffff"></label>
-        <label class="check-row">Username glow<input id="glow-toggle" type="checkbox"></label>
-        
-        <div class="preview-box">
-          <small>PROFILE PREVIEW</small>
-          <img id="profile-preview-image" class="preview-avatar hidden" alt="Avatar Preview">
-          <strong id="username-preview">YourName</strong>
+      <!-- ==========================================================================
+           2. PROFILE REGISTRATION AND CUSTOMIZATION COMPONENT
+           ========================================================================== -->
+      <div id="customize-section" class="form-step auth-container-wrapper">
+        <!-- Interactive Directional Navigation Core Buttons -->
+        <div class="form-scroll-navigation-bar">
+          <button class="scroll-nav-arrow-btn up" type="button" data-target="customize-section">▲</button>
+          <button class="scroll-nav-arrow-btn down" type="button" data-target="customize-section">▼</button>
         </div>
-        <button id="save-profile-btn" class="action-btn" type="button">Enter Moon Chat</button>
-      </div>
 
-      <!-- MAIN APP INTERFACE WINDOW LAYOUT -->
+        <div class="auth-card">
+          <p class="eyebrow">PROFILE</p>
+          <h1>Customize profile</h1>
+          <p class="subtitle">Set your picture, name style, and age visibility.</p>
+          
+          <label class="field">Profile picture URL<input id="profile-picture" type="url" placeholder="https://example.com"></label>
+          <label class="field">Username font
+            <select id="font-family">
+              <option>Segoe UI, sans-serif</option>
+              <option>Georgia, serif</option>
+              <option>Courier New, monospace</option>
+              <option>Impact, sans-serif</option>
+              <option>system-ui, sans-serif</option>
+            </select>
+          </label>
+          <label class="field">Username color<input id="font-color" type="color" value="#ffffff"></label>
+          <label class="check-row">Username glow<input id="glow-toggle" type="checkbox"></label>
+          
+          <div class="preview-box">
+            <small>PROFILE PREVIEW</small>
+            <img id="profile-preview-image" class="preview-avatar hidden" alt="Avatar Preview">
+            <strong id="username-preview">YourName</strong>
+          </div>
+          <button id="save-profile-btn" class="action-btn" type="button">Enter Moon Chat</button>
+        </div>
+      </div>
+      <!-- ==========================================================================
+           3. MAIN CHAT DASHBOARD CANVAS FRAMEWORK
+           ========================================================================== */ -->
       <div id="chat-section" class="form-step chat-layout">
-        
-        <!-- Sidebar Navigation (Left Column) -->
         <aside class="channel-sidebar">
           <div class="server-title">MOON CHAT <i></i></div>
           <div class="channel-label">TEXT CHANNELS</div>
@@ -85,7 +107,6 @@
           <button id="settings-btn" class="settings-btn" type="button">⚙ Settings</button>
         </aside>
 
-        <!-- Main Chat Center Window Panel (Middle Column) -->
         <section class="chat-main">
           <header class="chat-header">
             <div>
@@ -101,7 +122,6 @@
           </form>
         </section>
 
-        <!-- Dynamic User List Sidebar Panel (Right Column) -->
         <aside id="user-list-sidebar" class="user-list-sidebar">
           <div class="user-tabs-header">
             <button id="tab-online-btn" class="user-tab-btn active">Online</button>
@@ -111,7 +131,7 @@
         </aside>
       </div>
 
-      <!-- ACCOUNT SETTINGS MODAL OVERLAY PANEL -->
+      <!-- ACCOUNT SETTINGS MODAL MODULAR NODE OVERLAY -->
       <div id="settings-panel" class="settings-panel hidden">
         <div class="settings-header">
           <div><p class="eyebrow">ACCOUNT</p><h2>Settings</h2></div>
@@ -135,7 +155,7 @@
         <p id="settings-status" class="form-status"></p>
       </div>
 
-      <!-- PROFILE VIEWER MODAL OVERLAY -->
+      <!-- EXTENDED PROFILE MODAL COMPONENT -->
       <div id="profile-popup" class="profile-popup hidden">
         <button id="close-profile" class="close-btn" type="button">×</button>
         <img id="popup-picture" class="popup-avatar" alt="Avatar">
@@ -144,10 +164,27 @@
         <span id="popup-age"></span>
       </div>
 
+      <!-- ==========================================================================
+           4. DYNAMIC COMING SOON OVERLAY MODULE
+           ========================================================================== -->
+      <div id="coming-soon-panel" class="coming-soon-panel hidden">
+        <button id="close-coming-soon" class="close-btn" type="button">×</button>
+        <p class="eyebrow">ROADMAP</p>
+        <h2>Coming Soon</h2>
+        <p class="subtitle" style="text-align: left; margin-bottom: 14px;">Exciting future modules currently in development:</p>
+        <ul class="roadmap-list-items">
+          <li><strong>Party Hat On A Users Birthday</strong> <p>Celebrate another trip around the sun automatically!</p></li>
+          <li><strong>Animated Text Commands</strong> <p>Bring words to life. Example: <code>/wobble "Enter Text Here"</code></p></li>
+          <li><strong>Friends List Stack</strong> <p>Keep close ties with your favorite conversationalists.</p></li>
+          <li><strong>Private Messaging</strong> <p>Secure peer communication channels outside global public loops.</p></li>
+          <li><strong>Themes Customization</strong> <p>Tailor client backgrounds, fonts, and hue configurations.</p></li>
+        </ul>
+      </div>
+
     </section>
   </main>
 
-  <!-- TERMS RULES ENTRY SCREEN -->
+  <!-- GATEWAY TERMS REGISTRATION PROMPT overlay CARD -->
   <div id="rules-modal" class="rules-modal hidden" role="dialog" aria-modal="true" aria-labelledby="rules-title">
     <div class="rules-card">
       <div class="rules-icon">☾</div>
