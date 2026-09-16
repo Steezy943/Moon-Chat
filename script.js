@@ -1,13 +1,13 @@
-// --- Supabase Config Setup ---
+// --- Supabase Global Engine Verification ---
 const SUPABASE_URL = "https://supabase.co";
 const SUPABASE_KEY = "sb_publishable_oD3pjw8LGY6uFblF0azYZQ_5CuGNZtL";
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let authMode = 'login'; 
-let currentUserSession = null;
+let cachedUserId = null;
 let localUserMetadata = { role: 'user', username: '', font_family: '', font_color: '', text_glow: false };
 
-// --- DOM Elements Cache ---
+// --- DOM Bindings Matrix ---
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 const cardContainer = document.getElementById('card-container');
@@ -19,19 +19,12 @@ const birthdateInput = document.getElementById('birthdate');
 const birthdateGroup = document.querySelector('.id-signup-only');
 const submitBtn = document.getElementById('submit-btn');
 
-// --- Interactive Particle Grid background ---
+// --- Dynamic Particle Background Mechanics ---
 let particles = [];
-const mouse = { x: null, y: null, radius: 160 };
+const mouse = { x: null, y: null, radius: 170 };
 
-window.addEventListener('mousemove', (e) => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-});
-
-window.addEventListener('mouseout', () => {
-    mouse.x = null;
-    mouse.y = null;
-});
+window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+window.addEventListener('mouseout', () => { mouse.x = null; mouse.y = null; });
 
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -44,14 +37,12 @@ class Particle {
     constructor() {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
-        this.vx = (Math.random() - 0.5) * 0.8;
-        this.vy = (Math.random() - 0.5) * 0.8;
-        this.radius = Math.random() * 1.5 + 1;
+        this.vx = (Math.random() - 0.5) * 0.7;
+        this.vy = (Math.random() - 0.5) * 0.7;
+        this.radius = Math.random() * 1.5 + 1.2;
     }
     update() {
-        this.x += this.vx;
-        this.y += this.vy;
-
+        this.x += this.vx; this.y += this.vy;
         if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
         if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
 
@@ -61,25 +52,24 @@ class Particle {
             let distance = Math.sqrt(dx * dx + dy * dy);
             if (distance < mouse.radius) {
                 let force = (mouse.radius - distance) / mouse.radius;
-                this.x += (dx / distance) * force * 2;
-                this.y += (dy / distance) * force * 2;
+                // White dots pull towards cursor smoothly
+                this.x += (dx / distance) * force * 2.2;
+                this.y += (dy / distance) * force * 2.2;
             }
         }
     }
     draw() {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
         ctx.fill();
     }
 }
 
 function initParticles() {
     particles = [];
-    let count = Math.floor((canvas.width * canvas.height) / 9500);
-    for (let i = 0; i < count; i++) {
-        particles.push(new Particle());
-    }
+    let count = Math.floor((canvas.width * canvas.height) / 9000);
+    for (let i = 0; i < count; i++) particles.push(new Particle());
 }
 
 function animateParticles() {
@@ -94,30 +84,27 @@ function connectLines() {
             let dx = particles[a].x - particles[b].x;
             let dy = particles[a].y - particles[b].y;
             let dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (dist < 90) {
-                let alpha = (90 - dist) / 90 * 0.12;
+            if (dist < 95) {
+                let alpha = (95 - dist) / 95 * 0.14;
                 ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
                 ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(particles[a].x, particles[a].y);
-                ctx.lineTo(particles[b].x, particles[b].y);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(particles[a].x, particles[a].y);
+                ctx.lineTo(particles[b].x, particles[b].y); ctx.stroke();
             }
         }
     }
 }
-resizeCanvas();
-animateParticles();
+resizeCanvas(); animateParticles();
 
-// --- 3D Glass Panel Pointer Tracking Matrix ---
+// --- 3D Orientation Pointer Tracking System ---
 let isHovered = false;
 cardContainer.addEventListener('mouseenter', () => { isHovered = true; });
 cardContainer.addEventListener('mouseleave', () => { isHovered = false; });
 
 window.addEventListener('mousemove', (e) => {
     if (isHovered) {
-        glassCard.style.transform = 'rotateX(0deg) rotateY(0deg) translateZ(15px)';
+        // Stabilize perfectly when mouse interacts inside the interface panel
+        glassCard.style.transform = 'rotateX(0deg) rotateY(0deg) translateZ(10px)';
         return; 
     }
     const centerX = window.innerWidth / 2;
@@ -125,17 +112,17 @@ window.addEventListener('mousemove', (e) => {
     const dx = e.clientX - centerX;
     const dy = e.clientY - centerY;
 
-    const tiltX = -(dy / centerY) * 18; 
-    const tiltY = (dx / centerX) * 18;
-    glassCard.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(0px)`;
+    const tiltX = -(dy / centerY) * 16; 
+    const tiltY = (dx / centerX) * 16;
+    glassCard.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(0deg)`;
 });
 
-// --- Auth Toggle Listeners ---
+// --- Tab Controls Fixed Declarations ---
 const toggleLogin = document.getElementById('toggle-login');
 const toggleSignup = document.getElementById('toggle-signup');
 
-toggleLogin.addEventListener('click', () => switchAuthMode('login'));
-toggleSignup.addEventListener('click', () => switchAuthMode('signup'));
+toggleLogin.addEventListener('click', (e) => { e.preventDefault(); switchAuthMode('login'); });
+toggleSignup.addEventListener('click', (e) => { e.preventDefault(); switchAuthMode('signup'); });
 
 function switchAuthMode(mode) {
     authMode = mode;
@@ -153,7 +140,7 @@ function switchAuthMode(mode) {
     }
 }
 
-// --- Auth Form Management Execution ---
+// --- Custom Auth Submission Mapping Pipeline ---
 authForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const user = usernameInput.value.trim();
@@ -161,45 +148,46 @@ authForm.addEventListener('submit', async (e) => {
     const bday = birthdateInput.value;
 
     if (authMode === 'signup') {
-        // Authenticate anonymously bypassing emails cleanly
-        const { data, error } = await supabase.auth.signInAnonymously({
-            options: {
-                data: {
-                    display_username: user,
-                    password_hash_ver: pass, // saved metadata for local comparison logic
-                    birthdate: bday
-                }
-            }
-        });
+        // Query to check if username profile exists locally
+        const { data: duplicate } = await supabase.from('profiles').select('username').eq('username', user).maybeSingle();
+        if (duplicate) { alert("Username already registered!"); return; }
 
-        if (error) { alert(`Sign-up Fail: ${error.message}`); return; }
-        currentUserSession = data.user;
+        // Generate custom deterministic pseudo-UUID reference string
+        const generatedId = typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : 'user_' + Math.random().toString(36).substring(2, 15);
         
+        const runtimeProfile = {
+            id: generatedId,
+            username: user,
+            password_plaintext_ver: pass,
+            birthdate: bday,
+            role: user.toLowerCase() === 'steezy' ? 'owner' : 'user'
+        };
+
+        const { error: insertErr } = await supabase.from('profiles').insert(runtimeProfile);
+        if (insertErr) { alert(`Registration failed: ${insertErr.message}`); return; }
+
+        cachedUserId = generatedId;
         document.getElementById('auth-section').classList.remove('active');
         document.getElementById('customize-section').classList.add('active');
         document.getElementById('username-preview').innerText = user;
     } else {
-        // Look up corresponding identity rows
-        const { data: matchedProfiles, error: lookupErr } = await supabase
+        // Execute manual structural credential checks
+        const { data: targetProfile, error: pullErr } = await supabase
             .from('profiles')
-            .select('id')
-            .eq('username', user);
-        if (lookupErr || !matchedProfiles || matchedProfiles.length === 0) {
-            alert("No user exists with that username."); return;
+            .select('*')
+            .eq('username', user)
+            .maybeSingle();
+
+        if (pullErr || !targetProfile || targetProfile.password_plaintext_ver !== pass) {
+            alert("Invalid account combination credentials."); return;
         }
 
-        // Sign in using cached credentials 
-        const { data: authData, error: loginErr } = await supabase.auth.signInAnonymously();
-        if (loginErr) { alert("Login interface error."); return; }
-
-        currentUserSession = authData.user;
-        // Override session reference pointers manually 
-        currentUserSession.id = matchedProfiles.id;
+        cachedUserId = targetProfile.id;
         await initChatSystem();
     }
 });
 
-// --- Preview Syncer ---
+// --- Dynamic Typography Sync Framework ---
 const fontSelect = document.getElementById('font-family');
 const colorInput = document.getElementById('font-color');
 const glowToggle = document.getElementById('glow-toggle');
@@ -214,14 +202,12 @@ fontSelect.addEventListener('change', updateLivePreview);
 colorInput.addEventListener('input', updateLivePreview);
 glowToggle.addEventListener('change', updateLivePreview);
 
-// --- Complete Profile Layer Setup ---
-document.getElementById('save-profile-btn').addEventListener('click', async () => {
-    if (!currentUserSession) return;
-    const user = usernameInput.value.trim();
+// --- Custom Configuration Asset Push ---
+document.getElementById('save-profile-btn').addEventListener('click', async (e) => {
+    e.preventDefault();
+    if (!cachedUserId) return;
 
-    const profileData = {
-        id: currentUserSession.id,
-        username: user,
+    const metadataUpdate = {
         avatar_url: document.getElementById('avatar').value,
         banner_url: document.getElementById('banner').value,
         font_family: fontSelect.value,
@@ -230,23 +216,18 @@ document.getElementById('save-profile-btn').addEventListener('click', async () =
         updated_at: new Date()
     };
 
-    const { error } = await supabase.from('profiles').upsert(profileData);
-    if (error) { alert(`Save failed: ${error.message}`); } else { await initChatSystem(); }
+    const { error: updateErr } = await supabase.from('profiles').update(metadataUpdate).eq('id', cachedUserId);
+    if (updateErr) { alert(`Update failed: ${updateErr.message}`); } else { await initChatSystem(); }
 });
 
-// --- Interactive Chat Space ---
+// --- Execution Room Routine Pipeline ---
 async function initChatSystem() {
-    const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('role, username, is_banned, font_family, font_color, text_glow, muted_until')
-        .eq('id', currentUserSession.id)
-        .maybeSingle();
+    const { data: account, error } = await supabase.from('profiles').select('*').eq('id', cachedUserId).maybeSingle();
+    if (error || !account) { alert("Session loading runtime error."); return; }
+    if (account.is_banned) { alert("This profile context has been banned."); window.location.reload(); return; }
 
-    if (error || !profile) { alert("Failed to resolve user account metadata."); return; }
-    if (profile.is_banned) { alert("Account has been permanently banned."); window.location.reload(); return; }
-
-    localUserMetadata = profile;
-    document.getElementById('user-role-badge').innerText = `Role: ${profile.role.toUpperCase()}`;
+    localUserMetadata = account;
+    document.getElementById('user-role-badge').innerText = `Role: ${account.role.toUpperCase()}`;
 
     cardContainer.style.maxWidth = "780px"; 
     document.getElementById('auth-section').classList.remove('active');
@@ -266,16 +247,15 @@ async function loadMessages() {
 }
 function displaySingleMessage(msg) {
     const container = document.getElementById('message-container');
-    const div = document.createElement('div');
-    div.className = 'msg-block';
+    const div = document.createElement('div'); div.className = 'msg-block';
     
     let adminUI = '';
     if (localUserMetadata.role === 'owner' && msg.username.toLowerCase() !== 'steezy') {
         adminUI = `
             <div class="mod-tools">
-                <button class="mod-btn" onclick="executeModAction('mute', '${msg.user_id}')">Mute</button>
-                <button class="mod-btn" onclick="executeModAction('timeout', '${msg.user_id}')">10m</button>
-                <button class="mod-btn" onclick="executeModAction('ban', '${msg.user_id}')">Ban</button>
+                <button type="button" class="mod-btn" onclick="executeModAction('mute', '${msg.user_id}')">Mute</button>
+                <button type="button" class="mod-btn" onclick="executeModAction('timeout', '${msg.user_id}')">10m</button>
+                <button type="button" class="mod-btn" onclick="executeModAction('ban', '${msg.user_id}')">Ban</button>
             </div>
         `;
     }
@@ -301,15 +281,16 @@ function listenToGlobalChat() {
 document.getElementById('chat-input-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const input = document.getElementById('chat-msg');
+    if (!input.value.trim()) return;
     
     if (localUserMetadata.muted_until && new Date(localUserMetadata.muted_until) > new Date()) {
-        alert("You are currently muted/timed out."); return;
+        alert("You are currently timed out."); return;
     }
 
     await supabase.from('messages').insert({
-        user_id: currentUserSession.id,
+        user_id: localUserMetadata.id,
         username: localUserMetadata.username,
-        content: input.value,
+        content: input.value.trim(),
         font_family: localUserMetadata.font_family,
         font_color: localUserMetadata.font_color,
         text_glow: localUserMetadata.text_glow
