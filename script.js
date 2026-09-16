@@ -17,7 +17,6 @@
     } catch {}
   };
 
-  // Baseline mock account seed profile parameters
   if (!localStorage.getItem('moon-chat-accounts')) {
     const defaultAccounts = {
       "user": { username: "User", password: "password", birthdate: "2000-01-01", picture: "", showAge: true, role: "member", banned: false, mutedUntil: 0 },
@@ -45,9 +44,7 @@
   const show = id => {
     document.querySelectorAll('.form-step').forEach(x => x.classList.remove('active'));
     const targetElement = $(id);
-    if (targetElement) {
-      targetElement.classList.add('active');
-    }
+    if (targetElement) targetElement.classList.add('active');
   };
 
   const img = (el, url) => {
@@ -137,15 +134,13 @@
   resize();
   animate();
 
-  function setMode(m) {
+  window.setMode = function(m) {
     mode = m;
     \$('toggle-login').classList.toggle('active', m === 'login');
     \(('toggle-signup').classList.toggle('active', m === 'signup');\)('auth-title').textContent = m === 'login' ? 'Welcome back' : 'Create an account';
     \(('submit-btn').textContent = m === 'login' ? 'Login' : 'Create account';\)('birthdate-group').classList.toggle('hidden', m !== 'signup');
     \(('birthdate').required = m === 'signup';\)('form-status').textContent = '';
-  }
-
-  \(('toggle-login').onclick = () => setMode('login');\)('toggle-signup').onclick = () => setMode('signup');
+  };
 
   \$('auth-form').onsubmit = e => {
     e.preventDefault();
@@ -209,9 +204,100 @@
 
   function scrollToBottom() {
     const container = \$('message-container');
-    if (container) {
-      container.scrollTop = container.scrollHeight;
+    if (container) container.scrollTop = container.scrollHeight;
+  }
+
+  function render(m) {
+    const b = document.createElement('article');
+    b.className = 'msg-block';
+
+    const accounts = read('moon-chat-accounts', {});
+    const authorData = accounts[m.username.toLowerCase()] || {};
+    
+    if (authorData.picture) {
+      const avatarImg = document.createElement('img');
+      avatarImg.className = 'avatar';
+      avatarImg.src = authorData.picture;
+      avatarImg.alt = m.username;
+      b.append(avatarImg);
+    } else {
+      const avatarFallback = document.createElement('span');
+      avatarFallback.className = 'avatar';
+      avatarFallback.textContent = m.username.toUpperCase();
+      b.append(avatarFallback);
     }
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg-body-wrapper';
+
+    const h = document.createElement('div');
+    h.className = 'msg-head';
+    
+    const n = document.createElement('button');
+    n.className = 'msg-author';
+    n.textContent = m.username;
+    n.onclick = () => openProfile(m.username);
+    
+    const t = document.createElement('time');
+    t.className = 'msg-time';
+    t.textContent = m.time || '';
+    h.append(n, t);
+    
+    const p = document.createElement('p');
+    p.textContent = m.content;
+    wrapper.append(h, p);
+
+    if (currentUser?.role === 'owner' && m.username.toLowerCase() !== 'steezy') {
+      const tools = document.createElement('div');
+      tools.className = 'mod-tools';
+      ['timeout', 'mute', 'ban'].forEach(act => {
+        const x = document.createElement('button');
+        x.textContent = act;
+        x.onclick = () => moderate(act, m.username);
+        tools.append(x);
+      });
+      wrapper.append(tools);
+    }
+    
+    b.append(wrapper);
+    \$('message-container').append(b);
+  }
+
+  function load() {
+    \$('message-container').replaceChildren();
+    read(key(), []).forEach(render);
+    scrollToBottom();
+  }
+
+  function chans() {
+    const l = \$('channel-list');
+    l.replaceChildren();
+    Object.keys(channels).forEach(id => {
+      const b = document.createElement('button');
+      b.className = `channel-btn${id === activeChannel ? ' active' : ''}`;
+      b.textContent = `#  ${id}`;
+      b.onclick = () => select(id);
+      l.append(b);
+    });
+  }
+  \$('save-profile-btn').onclick = () => {
+    currentUser.picture = \$('profile-picture').value.trim();
+    currentUser.font = \$('font-family').value;
+    currentUser.color = \$('font-color').value;
+    currentUser.glow = \$('glow-toggle').checked;
+    const a = read('moon-chat-accounts', {});
+    a[currentUser.username.toLowerCase()] = currentUser;
+    write('moon-chat-accounts', a);
+    enterChat();
+  };
+
+  function key() {
+    return `moon-chat-messages-${activeChannel}`;
+  }
+
+  function scrollToBottom() {
+    const container = \$('message-container');
+    if (container) container.scrollTop = container.scrollHeight;
   }
 
   function render(m) {
@@ -306,7 +392,6 @@
 
   function initWebSocketSync() {
     if (socket) return;
-    
     socket = new WebSocket('wss://api.spacekit.io/v1/ws?room=moon-chat-2026-global');
 
     socket.onopen = () => {
@@ -320,16 +405,12 @@
         if (!data || !data.type) return;
 
         if (data.type === 'PING') {
-          registeredActiveMeshMembers.set(data.username.toLowerCase(), {
-            username: data.username,
-            lastSeen: Date.now()
-          });
+          registeredActiveMeshMembers.set(data.username.toLowerCase(), { username: data.username, lastSeen: Date.now() });
           renderUserSidebarList();
         }
 
         if (data.type === 'CHAT' && data.channel === activeChannel) {
           const ms = read(`moon-chat-messages-${data.channel}`, []);
-          
           if (!ms.some(existing => existing.time === data.msg.time && existing.content === data.msg.content && existing.username === data.msg.username)) {
             ms.push(data.msg);
             write(`moon-chat-messages-${data.channel}`, ms.slice(-100));
@@ -338,7 +419,7 @@
           }
         }
       } catch (err) {
-        console.error("Payload decoding failure:", err);
+        console.error(err);
       }
     };
 
@@ -392,22 +473,9 @@
       nameLabel.className = 'user-item-name';
       nameLabel.textContent = account.username;
       row.append(nameLabel);
-
       listContainer.append(row);
     });
   }
-
-  \$('tab-online-btn').onclick = () => {
-    userListTabMode = 'online';
-    \(('tab-online-btn').classList.add('active');\)('tab-offline-btn').classList.remove('active');
-    renderUserSidebarList();
-  };
-  
-  \$('tab-offline-btn').onclick = () => {
-    userListTabMode = 'offline';
-    \(('tab-offline-btn').classList.add('active');\)('tab-online-btn').classList.remove('active');
-    renderUserSidebarList();
-  };
 
   function moderate(act, target) {
     if (currentUser?.role !== 'owner') return;
@@ -460,8 +528,7 @@
   }
 
   \$('settings-btn').onclick = openSettings;
-  \$('close-settings').onclick = () => \(('settings-panel').classList.add('hidden');\)('account-button').onclick = () => openProfile(currentUser.username);
-  ('close-profile').onclick = () => ('profile-popup').classList.add('hidden');
+  \$('account-button').onclick = () => openProfile(currentUser.username);
 
   \$('save-settings').onclick = () => {
     const old = currentUser.username, keyName = old.toLowerCase(), a = read('moon-chat-accounts', {});
@@ -479,37 +546,6 @@
     \$('settings-panel').classList.add('hidden');
   };
 
-  /* --- FORMS INTERACTIVE ARROW NAV SCROLL CLICK LISTENERS --- */
-  document.querySelectorAll('.scroll-nav-arrow-btn').forEach(btn => {
-    btn.onclick = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const parentId = btn.getAttribute('data-target');
-      const targetFormContainer = \$(parentId);
-      if (!targetFormContainer) return;
-      const stepDistance = btn.classList.contains('down') ? 160 : -160;
-      targetFormContainer.scrollBy({ top: stepDistance, behavior: 'smooth' });
-    };
-  });
-
-  /* --- TEASER ROADMAP TOGGLE POPUP TRIGGERS --- */
-  const promoTrigger = \$('global-coming-soon-trigger');
-  if (promoTrigger) {
-    promoTrigger.onclick = (e) => {
-      e.preventDefault();
-      \$('coming-soon-panel')?.classList.remove('hidden');
-    };
-  }
-
-  const promoClose = \$('close-coming-soon');
-  if (promoClose) {
-    promoClose.onclick = (e) => {
-      e.preventDefault();
-      \$('coming-soon-panel')?.classList.add('hidden');
-    };
-  }
-
-  // Force system back to the fresh login screen frame on start up
   setMode('login');
   show('auth-section');
 })();
