@@ -3,105 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unblocked Chat Space</title>
+    <meta name="theme-color" content="#000000">
+    <title>Moon Chat</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Supabase CDN Core -->
-    <script src="https://jsdelivr.net"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
-    <!-- Background Canvas Layer for White Dynamic Dots -->
-    <canvas id="bg-canvas"></canvas>
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
 
-    <!-- 3D Transform Wrapper Stage -->
-    <div class="card-container" id="card-container">
-        <div class="glass-card" id="glass-card">
-            
-            <!-- STEP 1: Registration and Access Panel -->
+    <main class="card-container" id="card-container">
+        <section class="glass-card" id="glass-card">
             <div id="auth-section" class="form-step active">
-                <h2 id="auth-title">Welcome</h2>
-                <div class="toggle-container">
-                    <button type="button" id="toggle-login" class="toggle-btn active">Login</button>
-                    <button type="button" id="toggle-signup" class="toggle-btn">Sign Up</button>
+                <div class="brand-mark" aria-hidden="true">✦</div>
+                <p class="eyebrow">MOON CHAT</p>
+                <h1 id="auth-title">Welcome back</h1>
+                <p class="subtitle">A quiet place to connect.</p>
+
+                <div class="toggle-container" role="tablist" aria-label="Authentication mode">
+                    <button type="button" id="toggle-login" class="toggle-btn active" role="tab" aria-selected="true">Login</button>
+                    <button type="button" id="toggle-signup" class="toggle-btn" role="tab" aria-selected="false">Sign up</button>
                 </div>
 
-                <form id="auth-form">
+                <form id="auth-form" novalidate>
                     <div class="input-group">
                         <label for="username">Username</label>
-                        <input type="text" id="username" placeholder="Enter username" required autocomplete="off">
+                        <input type="text" id="username" placeholder="Enter username" required autocomplete="username" maxlength="32">
                     </div>
                     <div class="input-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" placeholder="Enter password" required autocomplete="off">
+                        <input type="password" id="password" placeholder="Enter password" required autocomplete="current-password" minlength="4">
                     </div>
                     <div class="input-group id-signup-only hidden">
                         <label for="birthdate">Birthdate</label>
-                        <input type="date" id="birthdate">
+                        <input type="date" id="birthdate" autocomplete="bday">
                     </div>
-                    
-                    <button type="submit" id="submit-btn" class="action-btn">Next</button>
+                    <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+                    <button type="submit" id="submit-btn" class="action-btn">Login</button>
                 </form>
             </div>
 
-            <!-- STEP 2: Profile Customization Panel -->
             <div id="customize-section" class="form-step">
-                <h2>Customize Profile</h2>
+                <p class="eyebrow">ONE LAST STEP</p>
+                <h1>Customize your profile</h1>
+                <p class="subtitle">Make your presence feel like home.</p>
                 <div class="form-scroll-container">
-                    <div class="input-group">
-                        <label for="avatar">Profile Picture (URL)</label>
-                        <input type="text" id="avatar" placeholder="https://example.com">
+                    <div class="input-group"><label for="avatar">Profile picture URL</label><input type="url" id="avatar" placeholder="https://example.com/avatar.png"></div>
+                    <div class="input-group"><label for="banner">Profile banner URL</label><input type="url" id="banner" placeholder="https://example.com/banner.png"></div>
+                    <div class="input-group"><label for="font-family">Username font</label>
+                        <select id="font-family"><option value="'Segoe UI', sans-serif">Standard</option><option value="'Courier New', monospace">Retro Space</option><option value="Georgia, serif">Elegant</option><option value="Impact, sans-serif">Bold Impact</option></select>
                     </div>
-                    <div class="input-group">
-                        <label for="banner">Profile Banner (URL)</label>
-                        <input type="text" id="banner" placeholder="https://example.com">
-                    </div>
-
-                    <div class="input-group">
-                        <label for="font-family">Username Font</label>
-                        <select id="font-family">
-                            <option value="'Segoe UI', sans-serif">Standard</option>
-                            <option value="'Courier New', monospace">Retro Space</option>
-                            <option value="'Georgia', serif">Elegant</option>
-                            <option value="'Impact', sans-serif">Bold Impact</option>
-                        </select>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="font-color">Username Color</label>
-                        <input type="color" id="font-color" value="#ffffff">
-                    </div>
-
-                    <div class="input-group toggle-inline">
-                        <label for="glow-toggle">Username Text Glow</label>
-                        <input type="checkbox" id="glow-toggle">
-                    </div>
-
-                    <div class="preview-box">
-                        <p>Username Preview:</p>
-                        <span id="username-preview">YourName</span>
-                    </div>
-
-                    <button type="button" id="save-profile-btn" class="action-btn">Complete Setup</button>
+                    <div class="input-group"><label for="font-color">Username color</label><input type="color" id="font-color" value="#ffffff"></div>
+                    <label class="toggle-inline" for="glow-toggle"><span>Username text glow</span><input type="checkbox" id="glow-toggle"></label>
+                    <div class="preview-box"><p>USERNAME PREVIEW</p><span id="username-preview">YourName</span></div>
+                    <button type="button" id="save-profile-btn" class="action-btn">Enter Moon Chat</button>
                 </div>
             </div>
 
-            <!-- STEP 3: Realtime Chat Environment View -->
             <div id="chat-section" class="form-step">
-                <div class="chat-header">
-                    <span id="room-title"># global-chat</span>
-                    <span id="user-role-badge">Role: User</span>
-                </div>
-                
-                <div id="message-container"></div>
-                
-                <form id="chat-input-form">
-                    <input type="text" id="chat-msg" placeholder="Type an unblocked message..." autocomplete="off" required>
-                    <button type="submit" id="send-btn">Send</button>
-                </form>
+                <div class="chat-header"><span id="room-title"># global-chat</span><span id="user-role-badge">Role: User</span></div>
+                <div id="message-container" aria-live="polite"></div>
+                <form id="chat-input-form"><input type="text" id="chat-msg" placeholder="Type a message..." autocomplete="off" maxlength="500" required><button type="submit" id="send-btn">Send</button></form>
             </div>
-
-        </div>
-    </div>
-
-    <script src="script.js"></script>
+        </section>
+    </main>
 </body>
 </html>
