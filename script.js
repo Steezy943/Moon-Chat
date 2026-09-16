@@ -17,6 +17,11 @@
     } catch {}
   };
 
+  // PeerJS live cloud network syncing variables
+  let peer = null;
+  let activeConnections = [];
+  const PEER_ROOM_PREFIX = "moon-chat-global-room-2026-";
+
   if (!localStorage.getItem('moon-chat-accounts')) {
     const defaultAccounts = {
       "user": {
@@ -281,6 +286,7 @@
     $('card-container').style.maxWidth = '1080px';
     show('chat-section');
     select(activeChannel);
+    initLiveNetwork();
   }
 
   function moderate(act, target) {
@@ -292,28 +298,83 @@
     if (act === 'timeout') a[k].mutedUntil = Date.now() + 600000;
     write('moon-chat-accounts', a);
   }
+  function initLiveNetwork() {
+    if (peer) return;
+    // Generate a unique clean mesh node routing reference
+    const uniqueNodeId = PEER_ROOM_PREFIX + currentUser.username.toLowerCase() + "-" + Math.floor(Math.random() * 10000);
+    peer = new Peer(uniqueNodeId);
+
+    peer.on('open', () => {
+      // Discover active neighbor network streams
+      const accounts = read('moon-chat-accounts', {});
+      Object.keys(accounts).forEach(userKey => {
+        const username = accounts[userKey].username;
+        if (username.toLowerCase() !== currentUser.username.toLowerCase()) {
+          // Look up active neighboring nodes
+          for (let i = 0; i < 5; i++) {
+            const potentialPeerId = PEER_ROOM_PREFIX + username.toLowerCase() + "-" + i;
+            connectToNode(potentialPeerId);
+          }
+        }
+      });
+    });
+
+    peer.on('connection', conn => {
+      registerNodeEvents(conn);
+    });
+  }
+
+  function connectToNode(targetPeerId) {
+    if (activeConnections.some(c => c.peer === targetPeerId)) return;
+    const conn = peer.connect(targetPeerId);
+    registerNodeEvents(conn);
+  }
+
+  function registerNodeEvents(conn) {
+    conn.on('open', () => {
+      if (!activeConnections.some(c => c.peer === conn.peer)) {
+        activeConnections.push(conn);
+      }
+    });
+    conn.on('data', data => {
+      if (data.type === 'MSG' && data.channel === activeChannel) {
+        const ms = read(`moon-chat-messages-${data.channel}`, []);
+        ms.push(data.msg);
+        write(`moon-chat-messages-${data.channel}`, ms.slice(-100));
+        render(data.msg);
+        scrollToBottom();
+      }
+    });
+    conn.on('close', () => {
+      activeConnections = activeConnections.filter(c => c.peer !== conn.peer);
+    });
+  }
+
   $('chat-input-form').onsubmit = e => {
     e.preventDefault();
     const i = $('chat-msg'), c = i.value.trim(), a = read('moon-chat-accounts', {})[currentUser.username.toLowerCase()];
     if (!c || a?.mutedUntil > Date.now()) return;
+    
     const m = {
       username: currentUser.username,
       content: c,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
+    
     const ms = read(key(), []);
     ms.push(m);
     write(key(), ms.slice(-100));
     render(m);
     scrollToBottom();
+
+    // Broadcast the message payload directly out over open networks
+    activeConnections.forEach(conn => {
+      if (conn.open) {
+        conn.send({ type: 'MSG', channel: activeChannel, msg: m });
+      }
+    });
     i.value = '';
   };
-
-  window.addEventListener('storage', e => {
-    if (e.key === key()) {
-      load();
-    }
-  });
 
   function openSettings() {
     const u = currentUser || {};
