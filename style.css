@@ -19,7 +19,7 @@ body {
   place-items: center;
   overflow: hidden;
   background: #000;
-  perspective: 1000px; /* Vital for 3D card rotation effect */
+  perspective: 1000px;
 }
 
 button, input, select {
@@ -64,7 +64,7 @@ button {
   padding: 40px 34px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 24px;
-  background: rgba(20, 20, 28, 0.45) !important; /* Authentic translucent alpha color */
+  background: rgba(20, 20, 28, 0.45) !important;
   color: #fff;
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9);
   backdrop-filter: blur(20px) !important;
@@ -72,16 +72,19 @@ button {
   position: relative;
   overflow: hidden;
   transform-style: preserve-3d;
-  transition: transform 0.1s ease-out; /* Keeps card movement fluid */
+  transition: transform 0.1s ease-out;
 }
 
 /* ==========================================================================
-   4. AUTHENTICATION MODULE (LOGIN / SIGN UP)
+   4. AUTHENTICATION MODULE (MATCHING IMAGE PROPORTIONS)
    ========================================================================== */
 .auth-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 320px; /* Refixed form box width down to match reference photo */
   margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .form-step {
@@ -119,15 +122,16 @@ button {
   color: #aaa;
   margin: 8px 0 24px;
   text-align: center;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 h1 {
   text-align: center;
   letter-spacing: -1px;
-  font-size: 32px;
+  font-size: 44px; /* Scaled up h1 text to match "Welcome back" proportion */
   font-weight: 700;
   margin-top: 4px;
+  line-height: 1.1;
 }
 
 /* Segmented Control Area */
@@ -139,6 +143,7 @@ h1 {
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 11px;
   background: rgba(0, 0, 0, 0.6);
+  width: 100%;
 }
 
 .toggle-btn {
@@ -158,6 +163,10 @@ h1 {
 }
 
 /* Inputs, Selects, and Labels */
+#auth-form {
+  width: 100%;
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -183,7 +192,7 @@ h1 {
 }
 
 .field input:focus, .field select:focus {
-  border-color: rgba(255, 255, 255, 0.45);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .field input::placeholder {
@@ -192,14 +201,14 @@ h1 {
 
 .action-btn {
   width: 100%;
-  padding: 14px;
+  padding: 16px;
   border: 0;
   border-radius: 9px;
   color: #000;
   background: #fff;
   font-weight: bold;
   font-size: 15px;
-  margin-top: 8px;
+  margin-top: 14px;
 }
 
 .action-btn:hover {
@@ -234,14 +243,15 @@ h1 {
   border: 1px dashed rgba(255, 255, 255, 0.25);
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.2);
+  width: 100%;
 }
-
 .preview-box small {
   color: #666;
   font-size: 10px;
   font-weight: bold;
   letter-spacing: 1px;
 }
+
 .preview-box strong {
   font-size: 24px;
 }
@@ -255,7 +265,7 @@ h1 {
 }
 
 /* ==========================================================================
-   5. CHAT MAIN DESKTOP INTERFACE
+   5. CHAT MAIN DESKTOP INTERFACE (RETAINED MAXIMUM CHAT PANELS)
    ========================================================================== */
 .chat-layout {
   height: 100%;
@@ -268,7 +278,6 @@ h1 {
   display: grid;
 }
 
-/* Left Sidebar Engine */
 .channel-sidebar {
   display: flex;
   flex-direction: column;
@@ -377,12 +386,12 @@ h1 {
   text-align: left;
   font-size: 13px;
 }
+
 .settings-btn:hover {
   color: #fff;
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* Right Chat Column Panel */
 .chat-main {
   min-width: 0;
   display: flex;
@@ -427,9 +436,6 @@ h1 {
   letter-spacing: 0.5px;
 }
 
-/* ==========================================================================
-   6. SCROLLABLE MESSAGE CONTAINER & BLOCK COMPONENTS
-   ========================================================================== */
 #message-container {
   flex: 1;
   min-height: 0;
@@ -441,7 +447,6 @@ h1 {
   flex-direction: column;
 }
 
-/* Custom Scrollbar Styles for Message Stream Container */
 #message-container::-webkit-scrollbar {
   width: 6px;
 }
@@ -497,7 +502,6 @@ h1 {
   word-break: break-word;
 }
 
-/* Moderation Buttons Overlay Box */
 .mod-tools {
   display: flex;
   gap: 5px;
@@ -519,7 +523,6 @@ h1 {
   border-color: rgba(255, 119, 119, 0.45);
 }
 
-/* Bottom Chat Form Bar Placement Area */
 .chat-main form {
   display: flex;
   gap: 12px;
@@ -560,9 +563,6 @@ h1 {
   opacity: 0.8;
 }
 
-/* ==========================================================================
-   7. FLOATING OVERLAYS (SETTINGS PANEL & PROFILES)
-   ========================================================================== */
 .settings-panel, .profile-popup {
   position: absolute;
   z-index: 10;
@@ -619,9 +619,6 @@ h1 {
   color: #fff;
 }
 
-/* ==========================================================================
-   8. MEDIA QUERIES & RESPONSIVE CONSTRAINTS
-   ========================================================================== */
 @media (max-width: 650px) {
   .glass-card {
     padding: 24px 16px;
