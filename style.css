@@ -76,41 +76,44 @@ button {
 }
 
 /* ==========================================================================
-   4. SLIM REGISTRATION & PROFILE OVERLAY GATEWAY (REFINED TO 280PX)
+   4. SLIM REGISTRATION & PROFILE OVERLAY GATEWAY (REFINED TO 290PX)
    ========================================================================== */
 .auth-card {
   width: 100%;
-  max-width: 290px; /* Fix: Made entry and customization cards distinctly slimmer */
+  max-width: 290px;
   margin: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+/* Fix: Ensures the form system states change block style properties elegantly */
+.form-step {
+  display: none !important;
+  width: 100%;
+  height: 100%;
+}
+
+/* Fix: Gives parent containers dynamic auto-scroll capability when contents exceed card dimensions */
+.form-step.active {
+  display: block !important;
   height: 100%;
   max-height: 100%;
-  overflow-y: auto; /* Fix: Unlocks vertical scroll tracking so content doesn't freeze */
+  overflow-y: auto !important;
+  overflow-x: hidden;
   padding-right: 4px;
 }
 
-/* Custom Scrollbar for customization card overlay */
-.auth-card::-webkit-scrollbar {
+/* Custom Scrollbar configuration parameters for form panels */
+.form-step.active::-webkit-scrollbar {
   width: 4px;
 }
-.auth-card::-webkit-scrollbar-track {
+.form-step.active::-webkit-scrollbar-track {
   background: transparent;
 }
-.auth-card::-webkit-scrollbar-thumb {
+.form-step.active::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
-}
-
-.form-step {
-  display: none;
-  height: 100%;
-  width: 100%;
-}
-
-.form-step.active {
-  display: block;
 }
 
 .hidden {
@@ -128,6 +131,7 @@ button {
   font-size: 16px;
   color: rgba(255, 255, 255, 0.7);
 }
+
 .eyebrow {
   text-align: center;
   color: rgba(255, 255, 255, 0.4);
@@ -164,7 +168,6 @@ h1 {
   background: rgba(0, 0, 0, 0.4);
   width: 100%;
 }
-
 .toggle-btn {
   flex: 1;
   padding: 10px;
@@ -216,7 +219,6 @@ h1 {
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* Premium styling for HTML5 color wheel form pickers */
 .field input[type="color"] {
   padding: 4px;
   height: 40px;
@@ -271,6 +273,7 @@ h1 {
   background: rgba(0, 0, 0, 0.2);
   width: 100%;
 }
+
 .preview-box small {
   color: rgba(255, 255, 255, 0.3);
   font-size: 9px;
@@ -294,12 +297,12 @@ h1 {
 /* ==========================================================================
    5. CHAT MAIN DESKTOP INTERFACE (3-COLUMN MESH GRID SYSTEM)
    ========================================================================== */
-.chat-layout {
-  height: 100%;
-  width: 100%;
-  display: grid;
+/* Fix: Explicitly structures display logic properties so chat columns open safely */
+.form-step.chat-layout.active {
+  display: grid !important;
   grid-template-columns: 200px 1fr 200px;
-  overflow: hidden;
+  overflow: hidden !important;
+  padding-right: 0 !important;
 }
 
 .channel-sidebar {
@@ -327,7 +330,6 @@ h1 {
   background: #54e88a;
   box-shadow: 0 0 8px #54e88a;
 }
-
 .channel-label {
   padding: 10px 8px 6px;
   color: #555;
@@ -368,6 +370,7 @@ h1 {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
+
 .account-name {
   display: flex;
   flex-direction: column;
@@ -398,7 +401,7 @@ h1 {
   border: 0;
   border-radius: 7px;
   color: #8a8a8a;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 253, 0.03);
   text-align: left;
 }
 
@@ -544,24 +547,31 @@ h1 {
   color: #ddd;
 }
 
+/* ==========================================================================
+   7. SETTINGS & PROFILE POPUPS POSITION OVERRIDES
+   ========================================================================== */
 .settings-panel, .profile-popup {
   position: absolute;
-  z-index: 10;
+  z-index: 100;
   padding: 24px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 18px;
   background: rgba(24, 24, 33, 0.97);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.8);
 }
 
 .settings-panel {
   right: 24px;
   bottom: 24px;
   width: min(370px, calc(100% - 48px));
+  max-height: calc(100% - 48px);
+  overflow-y: auto;
 }
 
 .profile-popup {
-  left: 245px;
-  top: 90px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   width: 250px;
   text-align: center;
 }
@@ -577,7 +587,7 @@ h1 {
 }
 
 @media (max-width: 780px) {
-  .chat-layout {
+  .form-step.chat-layout.active {
     grid-template-columns: 140px 1fr;
   }
   .user-list-sidebar {
