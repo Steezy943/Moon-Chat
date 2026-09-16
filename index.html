@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unblocked Chat Space</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Supabase CDN -->
+    <!-- Supabase CDN Core -->
     <script src="https://jsdelivr.net"></script>
 </head>
 <body>
-    <!-- Background Canvas for Interactive Particles -->
+    <!-- Background Canvas Layer for White Dynamic Dots -->
     <canvas id="bg-canvas"></canvas>
 
-    <!-- 3D Glassmorphic Container -->
+    <!-- 3D Transform Wrapper Stage -->
     <div class="card-container" id="card-container">
         <div class="glass-card" id="glass-card">
             
-            <!-- STEP 1: Auth (Login/Signup) Panel -->
+            <!-- STEP 1: Registration and Access Panel -->
             <div id="auth-section" class="form-step active">
                 <h2 id="auth-title">Welcome</h2>
                 <div class="toggle-container">
@@ -27,7 +27,7 @@
                 <form id="auth-form">
                     <div class="input-group">
                         <label for="username">Username</label>
-                        <input type="text" id="username" placeholder="Enter unique username" required autocomplete="off">
+                        <input type="text" id="username" placeholder="Enter username" required autocomplete="off">
                     </div>
                     <div class="input-group">
                         <label for="password">Password</label>
@@ -42,7 +42,7 @@
                 </form>
             </div>
 
-            <!-- STEP 2: Profile Customization -->
+            <!-- STEP 2: Profile Customization Panel -->
             <div id="customize-section" class="form-step">
                 <h2>Customize Profile</h2>
                 <div class="form-scroll-container">
@@ -72,10 +72,9 @@
 
                     <div class="input-group toggle-inline">
                         <label for="glow-toggle">Username Text Glow</label>
-                        <input type="checkbox" id="glow-toggle" class="switch">
+                        <input type="checkbox" id="glow-toggle">
                     </div>
 
-                    <!-- Live Preview -->
                     <div class="preview-box">
                         <p>Username Preview:</p>
                         <span id="username-preview">YourName</span>
@@ -85,7 +84,7 @@
                 </div>
             </div>
 
-            <!-- STEP 3: Chat Room View -->
+            <!-- STEP 3: Realtime Chat Environment View -->
             <div id="chat-section" class="form-step">
                 <div class="chat-header">
                     <span id="room-title"># global-chat</span>
