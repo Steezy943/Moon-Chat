@@ -1,24 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Moon Chat</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="script.js" defer></script>
-</head>
-<body>
-  <canvas id="bg-canvas" aria-hidden="true"></canvas>
-  <main class="card-container" id="card-container">
-    <section class="glass-card" id="glass-card">
-      <div id="auth-section" class="form-step active">
-        <div class="brand-mark">✦</div><p class="eyebrow">MOON CHAT</p><h1 id="auth-title">Welcome back</h1><p class="subtitle">A quiet place to connect.</p>
-        <div id="toggle-container" class="toggle-container" role="tablist"><button type="button" id="toggle-login" class="toggle-btn active">Login</button><button type="button" id="toggle-signup" class="toggle-btn">Sign up</button></div>
-        <form id="auth-form" novalidate><div class="input-group"><label for="username">Username</label><input id="username" required autocomplete="username" placeholder="Enter username"></div><div class="input-group"><label for="password">Password</label><input id="password" type="password" required minlength="4" autocomplete="current-password" placeholder="Enter password"></div><div class="input-group hidden"><label for="birthdate">Birthdate</label><input id="birthdate" type="date"></div><p id="form-status" class="form-status"></p><button id="submit-btn" class="action-btn" type="submit">Login</button></form>
-      </div>
-      <div id="customize-section" class="form-step"><h1>Customize your profile</h1><p class="subtitle">Make your presence feel like home.</p><div class="form-scroll-container"><div class="input-group"><label for="font-family">Username font</label><select id="font-family"><option value="sans-serif">Standard</option><option value="monospace">Retro Space</option><option value="serif">Elegant</option></select></div><div class="input-group"><label for="font-color">Username color</label><input id="font-color" type="color" value="#ffffff"></div><label class="toggle-inline"><span>Username glow</span><input id="glow-toggle" type="checkbox"></label><div class="preview-box"><p>PREVIEW</p><span id="username-preview">YourName</span></div><button id="save-profile-btn" class="action-btn" type="button">Enter Moon Chat</button></div></div>
-      <div id="chat-section" class="form-step"><div class="chat-header"><span># global-chat</span><span id="user-role-badge">Role: User</span></div><div id="message-container"></div><form id="chat-input-form"><input id="chat-msg" required placeholder="Type a message..."><button id="send-btn" type="submit">Send</button></form></div>
-    </section>
-  </main>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#000000" />
+    <title>Moon Chat</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+    <main class="card-container" id="card-container">
+      <section class="glass-card" id="glass-card" aria-live="polite">
+        <div id="auth-section" class="form-step active">
+          <div class="brand-mark" aria-hidden="true">✦</div>
+          <p class="eyebrow">MOON CHAT</p>
+          <h1 id="auth-title">Welcome back</h1>
+          <p class="subtitle">A quiet place to connect.</p>
+
+          <div id="toggle-container" class="toggle-container" role="tablist" aria-label="Authentication mode">
+            <button type="button" id="toggle-login" class="toggle-btn active" role="tab" aria-selected="true">Login</button>
+            <button type="button" id="toggle-signup" class="toggle-btn" role="tab" aria-selected="false">Sign up</button>
+          </div>
+
+          <form id="auth-form" novalidate>
+            <div class="input-group">
+              <label for="username">Username</label>
+              <input id="username" type="text" placeholder="Enter username" autocomplete="username" required />
+            </div>
+
+            <div class="input-group">
+              <label for="password">Password</label>
+              <input id="password" type="password" placeholder="Enter password" autocomplete="current-password" required minlength="4" />
+            </div>
+
+            <div class="input-group hidden" id="birthdate-group">
+              <label for="birthdate">Birthdate</label>
+              <input id="birthdate" type="date" />
+            </div>
+
+            <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
+            <button id="submit-btn" class="action-btn" type="submit">Login</button>
+          </form>
+        </div>
+
+        <div id="customize-section" class="form-step">
+          <p class="eyebrow">PROFILE</p>
+          <h1>Customize your profile</h1>
+          <p class="subtitle">Make your presence feel like home.</p>
+
+          <div class="form-scroll-container">
+            <div class="input-group">
+              <label for="font-family">Username font</label>
+              <select id="font-family">
+                <option value="'Segoe UI', sans-serif">Standard</option>
+                <option value="'Courier New', monospace">Retro Space</option>
+                <option value="'Georgia', serif">Elegant</option>
+                <option value="'Impact', sans-serif">Bold Impact</option>
+              </select>
+            </div>
+
+            <div class="input-group">
+              <label for="font-color">Username color</label>
+              <input id="font-color" type="color" value="#ffffff" />
+            </div>
+
+            <label class="toggle-inline" for="glow-toggle">
+              <span>Username text glow</span>
+              <input id="glow-toggle" type="checkbox" />
+            </label>
+
+            <div class="preview-box">
+              <p>PREVIEW</p>
+              <span id="username-preview">YourName</span>
+            </div>
+
+            <button id="save-profile-btn" class="action-btn" type="button">Enter Moon Chat</button>
+          </div>
+        </div>
+
+        <div id="chat-section" class="form-step">
+          <div class="chat-header">
+            <span># global-chat</span>
+            <span id="user-role-badge">Role: User</span>
+          </div>
+
+          <div id="message-container" aria-live="polite"></div>
+
+          <form id="chat-input-form">
+            <input id="chat-msg" type="text" placeholder="Type a message..." autocomplete="off" required />
+            <button id="send-btn" type="submit">Send</button>
+          </form>
+        </div>
+      </section>
+    </main>
+  </body>
 </html>
