@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   
-  const \$ = id => document.getElementById(id);
+  const $ = id => document.getElementById(id);
   
   const read = (k, f) => {
     try {
@@ -17,6 +17,22 @@
     } catch {}
   };
 
+  if (!localStorage.getItem('moon-chat-accounts')) {
+    const defaultAccounts = {
+      "user": {
+        username: "User",
+        password: "password",
+        birthdate: "2000-01-01",
+        picture: "",
+        showAge: true,
+        role: "member",
+        banned: false,
+        mutedUntil: 0
+      }
+    };
+    localStorage.setItem('moon-chat-accounts', JSON.stringify(defaultAccounts));
+  }
+
   let mode = 'login';
   let currentUser = null;
   let activeChannel = 'general';
@@ -30,7 +46,7 @@
 
   const show = id => {
     document.querySelectorAll('.form-step').forEach(x => x.classList.remove('active'));
-    \$(id)?.classList.add('active');
+    $(id)?.classList.add('active');
   };
 
   const img = (el, url) => {
@@ -43,7 +59,7 @@
     }
   };
 
-  const canvas = \$('bg-canvas');
+  const canvas = $('bg-canvas');
   const ctx = canvas.getContext('2d');
   const mouse = { x: -999, y: -999 };
   let dots = [];
@@ -53,44 +69,69 @@
     canvas.width = innerWidth * d;
     canvas.height = innerHeight * d;
     ctx.setTransform(d, 0, 0, d, 0, 0);
-    dots = Array.from({ length: Math.min(130, Math.max(55, innerWidth * innerHeight / 16000)) }, () => ({
+    
+    dots = Array.from({ length: Math.min(140, Math.max(60, (innerWidth * innerHeight) / 14000)) }, () => ({
+      originX: Math.random() * innerWidth,
+      originY: Math.random() * innerHeight,
       x: Math.random() * innerWidth,
       y: Math.random() * innerHeight,
-      vx: (Math.random() - .5) * .25,
-      vy: (Math.random() - .5) * .25,
-      r: Math.random() * 1.4 + .6
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 1.5 + 0.5,
+      alpha: Math.random() * 0.5 + 0.3
     }));
   }
 
   function animate() {
     ctx.clearRect(0, 0, innerWidth, innerHeight);
+    
     dots.forEach(p => {
-      const x = mouse.x - p.x, y = mouse.y - p.y, d = Math.hypot(x, y);
-      if (d > 0 && d < 170) {
-        const f = (170 - d) / 170;
-        p.x += x / d * f * .6;
-        p.y += y / d * f * .6;
+      p.originX += p.vx;
+      p.originY += p.vy;
+      
+      if (p.originX < 0 || p.originX > innerWidth) p.vx *= -1;
+      if (p.originY < 0 || p.originY > innerHeight) p.vy *= -1;
+
+      const dx = mouse.x - p.originX;
+      const dy = mouse.y - p.originY;
+      const distance = Math.hypot(dx, dy);
+      const activeRadius = 180;
+      if (distance < activeRadius) {
+        const force = (activeRadius - distance) / activeRadius;
+        p.x += (mouse.x - p.x) * force * 0.08;
+        p.y += (mouse.y - p.y) * force * 0.08;
+      } else {
+        p.x += (p.originX - p.x) * 0.04;
+        p.y += (p.originY - p.y) * 0.04;
       }
-      p.x += p.vx;
-      p.y += p.vy;
-      if (p.x < 0 || p.x > innerWidth) p.vx *= -1;
-      if (p.y < 0 || p.y > innerHeight) p.vy *= -1;
+
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
       ctx.fill();
     });
+    
     requestAnimationFrame(animate);
   }
 
   addEventListener('resize', resize);
+  
   addEventListener('mousemove', e => {
     mouse.x = e.clientX;
     mouse.y = e.clientY;
-    if (!\(('card-container').matches(':hover')) {\)('glass-card').style.transform = `rotateX(${-(e.clientY / innerHeight - .5) * 12}deg) rotateY(${(e.clientX / innerWidth - .5) * 12}deg)`;
+    
+    const card = \$('glass-card');
+    if (card && !\$('card-container').matches(':hover')) {
+      const rotateX = -((e.clientY / innerHeight) - 0.5) * 14;
+      const rotateY = ((e.clientX / innerWidth) - 0.5) * 14;
+      card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
     }
   }, { passive: true });
-  ('card-container').onmouseenter = () => ('glass-card').style.transform = 'rotateX(0) rotateY(0)';
+
+  \$('card-container').onmouseenter = () => {
+    const card = \$('glass-card');
+    if (card) card.style.transform = 'rotateX(0deg) rotateY(0deg)';
+  };
   
   resize();
   animate();
@@ -147,7 +188,6 @@
   }
 
   ['font-family', 'font-color', 'glow-toggle', 'profile-picture'].forEach(id => \$(id).addEventListener('input', preview));
-
   \$('save-profile-btn').onclick = () => {
     currentUser.picture = \$('profile-picture').value.trim();
     currentUser.font = \$('font-family').value;
@@ -169,6 +209,7 @@
       container.scrollTop = container.scrollHeight;
     }
   }
+
   function render(m) {
     const b = document.createElement('article');
     b.className = 'msg-block';
@@ -244,7 +285,6 @@
     if (act === 'timeout') a[k].mutedUntil = Date.now() + 600000;
     write('moon-chat-accounts', a);
   }
-
   \$('chat-input-form').onsubmit = e => {
     e.preventDefault();
     const i = \$('chat-msg'), c = i.value.trim(), a = read('moon-chat-accounts', {})[currentUser.username.toLowerCase()];
