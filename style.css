@@ -3,7 +3,7 @@
     --primary: #0084ff;
     --primary-hover: #0066cc;
     --glass-bg: rgba(255, 255, 255, 0.08);
-    --glass-border: rgba(255, 255, 255, 0.18);
+    --glass-border: rgba(255, 255, 255, 0.2);
     --text-light: #f8fafc;
     --text-muted: #94a3b8;
     --app-background: #000000;
@@ -24,36 +24,36 @@ html, body {
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    perspective: 1200px; /* Establishes true deep 3D camera projection plane room */
+    perspective: 1000px; /* Establishes true deep 3D camera projection plane room */
 }
 
-/* Background Node Layer */
+/* Background Canvas Layer */
 #particle-canvas { 
     position: absolute; 
     top: 0; 
     left: 0; 
     width: 100%; 
     height: 100%; 
-    z-index: 1; 
+    z-index: 1; /* Pushes dots to the absolute back */
     pointer-events: none; 
 }
 
 /* 3D Glassmorphic Form Display Matrix */
 .glass-panel { 
     position: relative; 
-    z-index: 5; 
+    z-index: 5; /* Keeps form card floating in front of the dots canvas */
     width: 92%; 
     max-width: 440px; 
     background: var(--glass-bg); 
-    backdrop-filter: blur(25px); 
-    -webkit-backdrop-filter: blur(25px);
+    backdrop-filter: blur(25px) saturate(180%); 
+    -webkit-backdrop-filter: blur(25px) saturate(180%); /* Safari Fix */
     border: 1px solid var(--glass-border); 
     border-radius: 24px; 
     padding: 30px; 
     transform-style: preserve-3d; 
-    transform: rotateX(0deg) rotateY(0deg); /* Altered smoothly by app.js tracking vectors */
-    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
-    transition: transform 0.1s ease-out;
+    will-change: transform;
+    transform: rotateX(0deg) rotateY(0deg); 
+    box-shadow: 0 30px 60px rgba(0,0,0,0.7);
 }
 
 #chat-container { 
