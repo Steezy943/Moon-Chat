@@ -12,26 +12,26 @@
     <!-- Background Canvas for Interactive Particles -->
     <canvas id="bg-canvas"></canvas>
 
-    <!-- 3D Glassmorphic Wrapper -->
+    <!-- 3D Glassmorphic Container -->
     <div class="card-container" id="card-container">
         <div class="glass-card" id="glass-card">
             
-            <!-- STEP 1: Auth (Login/Signup) Toggle -->
+            <!-- STEP 1: Auth (Login/Signup) Panel -->
             <div id="auth-section" class="form-step active">
                 <h2 id="auth-title">Welcome</h2>
                 <div class="toggle-container">
-                    <button id="toggle-login" class="toggle-btn active" onclick="switchAuthMode('login')">Login</button>
-                    <button id="toggle-signup" class="toggle-btn" onclick="switchAuthMode('signup')">Sign Up</button>
+                    <button type="button" id="toggle-login" class="toggle-btn active">Login</button>
+                    <button type="button" id="toggle-signup" class="toggle-btn">Sign Up</button>
                 </div>
 
                 <form id="auth-form">
                     <div class="input-group">
                         <label for="username">Username</label>
-                        <input type="text" id="username" placeholder="Enter username" required>
+                        <input type="text" id="username" placeholder="Enter unique username" required autocomplete="off">
                     </div>
                     <div class="input-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" placeholder="Enter password" required>
+                        <input type="password" id="password" placeholder="Enter password" required autocomplete="off">
                     </div>
                     <div class="input-group id-signup-only hidden">
                         <label for="birthdate">Birthdate</label>
@@ -46,7 +46,6 @@
             <div id="customize-section" class="form-step">
                 <h2>Customize Profile</h2>
                 <div class="form-scroll-container">
-                    <!-- Images -->
                     <div class="input-group">
                         <label for="avatar">Profile Picture (URL)</label>
                         <input type="text" id="avatar" placeholder="https://example.com">
@@ -56,7 +55,6 @@
                         <input type="text" id="banner" placeholder="https://example.com">
                     </div>
 
-                    <!-- Typography & Styles -->
                     <div class="input-group">
                         <label for="font-family">Username Font</label>
                         <select id="font-family">
@@ -77,7 +75,7 @@
                         <input type="checkbox" id="glow-toggle" class="switch">
                     </div>
 
-                    <!-- Live Preview Box -->
+                    <!-- Live Preview -->
                     <div class="preview-box">
                         <p>Username Preview:</p>
                         <span id="username-preview">YourName</span>
@@ -87,17 +85,15 @@
                 </div>
             </div>
 
-            <!-- STEP 3: Main Room Layout Frame -->
+            <!-- STEP 3: Chat Room View -->
             <div id="chat-section" class="form-step">
                 <div class="chat-header">
                     <span id="room-title"># global-chat</span>
                     <span id="user-role-badge">Role: User</span>
                 </div>
                 
-                <!-- Active Message Feed -->
                 <div id="message-container"></div>
                 
-                <!-- Input Execution Strip -->
                 <form id="chat-input-form">
                     <input type="text" id="chat-msg" placeholder="Type an unblocked message..." autocomplete="off" required>
                     <button type="submit" id="send-btn">Send</button>
