@@ -3,97 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Sites Secured Chatroom Pro</title>
-    <!-- Linked to your new version name to break the server cache -->
-    <link rel="stylesheet" href="style_v3.css">
+    <title>Unblocked Chat Space</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Supabase CDN -->
+    <script src="https://jsdelivr.net"></script>
 </head>
 <body>
-    <canvas id="particle-canvas"></canvas>
+    <!-- Background Canvas for Interactive Particles -->
+    <canvas id="bg-canvas"></canvas>
 
-    <!-- Sign Up & Login Form Container -->
-    <div id="setup-container" class="glass-panel">
-        <h2 id="auth-title">Create Profile</h2>
-        <div class="form-group">
-            <label>Username</label>
-            <input type="text" id="username" placeholder="Choose a unique username">
-        </div>
-        <div class="form-group">
-            <label>Password</label>
-            <input type="password" id="auth-password" placeholder="••••••••">
-        </div>
-        <div id="register-fields">
-            <div class="form-group">
-                <label>Birth Date</label>
-                <input type="date" id="birthdate">
-            </div>
-            <div class="form-group">
-                <label>Profile Picture (Optional)</label>
-                <input type="file" id="avatar-file" accept="image/*">
-            </div>
-        </div>
-        <button id="auth-btn" class="action-btn" onclick="handleSubmit()">Sign Up & Join</button>
-        <p class="auth-toggle-text" id="auth-toggle" onclick="toggleAuthMode()">Already have an account? <span>Log In</span></p>
-    </div>
+    <!-- 3D Glassmorphic Wrapper -->
+    <div class="card-container" id="card-container">
+        <div class="glass-card" id="glass-card">
+            
+            <!-- STEP 1: Auth (Login/Signup) Toggle -->
+            <div id="auth-section" class="form-step active">
+                <h2 id="auth-title">Welcome</h2>
+                <div class="toggle-container">
+                    <button id="toggle-login" class="toggle-btn active" onclick="switchAuthMode('login')">Login</button>
+                    <button id="toggle-signup" class="toggle-btn" onclick="switchAuthMode('signup')">Sign Up</button>
+                </div>
 
-    <!-- Active Chat Feed Screen -->
-    <div id="chat-container" class="glass-panel">
-        <div class="chat-header">
-            <div class="user-info">
-                <img id="header-avatar" src="" alt="">
-                <strong id="header-name">Global Chat</strong>
+                <form id="auth-form">
+                    <div class="input-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" placeholder="Enter username" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" placeholder="Enter email" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" placeholder="Enter password" required>
+                    </div>
+                    <div class="input-group id-signup-only hidden">
+                        <label for="birthdate">Birthdate</label>
+                        <input type="date" id="birthdate">
+                    </div>
+                    
+                    <button type="submit" id="submit-btn" class="action-btn">Next</button>
+                </form>
             </div>
-            <button class="action-btn leave-btn" onclick="logout()">Logout</button>
-        </div>
-        <div id="messages"></div>
-        <div class="input-area">
-            <input type="text" id="msg-input" placeholder="Type a message..." onkeypress="handleKey(event)">
-            <button class="action-btn send-btn" onclick="sendMessage()">Send</button>
-        </div>
-        <div class="settings-trigger" onclick="openModal('settings-modal')">
-            <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73-1.69-.98l-.38-2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
-        </div>
-    </div>
 
-    <!-- User Profile Details Modal Info Panel -->
-    <div id="profile-modal" class="modal" onclick="closeModalOnOutsideClick(event, 'profile-modal')">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeModal('profile-modal')">&times;</span>
-            <img id="prof-modal-avatar" class="modal-avatar" src="" alt="">
-            <h3 id="prof-modal-title" class="modal-title">User Profile</h3>
-            <div class="stat-row"><span>Status:</span><span id="prof-modal-role" style="font-weight:700;">User</span></div>
-            <div class="stat-row"><span>Total Messages:</span><span id="prof-modal-count">0</span></div>
-            <div class="stat-row"><span>Birth Date:</span><span id="prof-modal-dob">Hidden</span></div>
-        </div>
-    </div>
-    <!-- Configuration Settings & Privacy Panel -->
-    <div id="settings-modal" class="modal" onclick="closeModalOnOutsideClick(event, 'settings-modal')">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeModal('settings-modal')">&times;</span>
-            <div class="tabs">
-                <div id="tab-theme" class="tab active" onclick="switchTab('theme')">Theme</div>
-                <div id="tab-privacy" class="tab" onclick="switchTab('privacy')">Privacy</div>
-            </div>
-            <div id="panel-theme" class="tab-panel active">
-                <div class="form-group">
-                    <label>App Visual Theme</label>
-                    <select id="theme-selector" onchange="applyTheme(this.value)">
-                        <option value="cosmic">Midnight Black</option>
-                        <option value="cyberpunk">Cyberpunk Neon</option>
-                        <option value="matrix">Matrix Code</option>
-                    </select>
+            <!-- STEP 2: Profile Customization -->
+            <div id="customize-section" class="form-step">
+                <h2>Customize Profile</h2>
+                <div class="form-scroll-container">
+                    <!-- Images -->
+                    <div class="input-group">
+                        <label for="avatar">Profile Picture (URL)</label>
+                        <input type="text" id="avatar" placeholder="https://example.com">
+                    </div>
+                    <div class="input-group">
+                        <label for="banner">Profile Banner (URL)</label>
+                        <input type="text" id="banner" placeholder="https://example.com">
+                    </div>
+
+                    <!-- Typography & Styles -->
+                    <div class="input-group">
+                        <label for="font-family">Username Font</label>
+                        <select id="font-family">
+                            <option value="'Segoe UI', sans-serif">Standard</option>
+                            <option value="'Courier New', monospace">Retro Space</option>
+                            <option value="'Georgia', serif">Elegant</option>
+                            <option value="'Impact', sans-serif">Bold Impact</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="font-color">Username Color</label>
+                        <input type="color" id="font-color" value="#ffffff">
+                    </div>
+
+                    <div class="input-group toggle-inline">
+                        <label for="glow-toggle">Username Text Glow</label>
+                        <input type="checkbox" id="glow-toggle" class="switch">
+                    </div>
+
+                    <!-- Live Preview Box -->
+                    <div class="preview-box">
+                        <p>Username Preview:</p>
+                        <span id="username-preview">YourName</span>
+                    </div>
+
+                    <button type="button" id="save-profile-btn" class="action-btn">Complete Setup</button>
                 </div>
             </div>
-            <div id="panel-privacy" class="tab-panel">
-                <div class="form-group" style="display:flex; align-items:center; justify-content:space-between; margin-top:10px;">
-                    <label style="margin:0;">Hide Birthday & Age</label>
-                    <input type="checkbox" id="hide-dob-checkbox" style="width:20px; height:20px;" onchange="updatePrivacy(this.checked)">
+
+            <!-- STEP 3: Main Room Layout Frame -->
+            <div id="chat-section" class="form-step">
+                <div class="chat-header">
+                    <span id="room-title"># global-chat</span>
+                    <span id="user-role-badge">Role: User</span>
                 </div>
+                
+                <!-- Active Message Feed -->
+                <div id="message-container"></div>
+                
+                <!-- Input Execution Strip -->
+                <form id="chat-input-form">
+                    <input type="text" id="chat-msg" placeholder="Type an unblocked message..." autocomplete="off" required>
+                    <button type="submit" id="send-btn">Send</button>
+                </form>
             </div>
+
         </div>
     </div>
 
-    <script src="https://jsdelivr.net"></script>
-    <!-- Linked to your new version name to force the browser layout update -->
-    <script type="module" src="app_v3.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
