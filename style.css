@@ -57,8 +57,10 @@ h2 {
     font-weight: 700;
     letter-spacing: -0.5px;
     margin-bottom: 25px;
-    background: linear-gradient(180deg, #fff 0%, #bbb 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #bbbbbb 100%);
+    background-clip: text;
     -webkit-background-clip: text;
+    color: transparent;
     -webkit-text-fill-color: transparent;
 }
 
