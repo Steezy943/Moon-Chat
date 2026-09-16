@@ -14,7 +14,6 @@ const cardContainer = document.getElementById('card-container');
 const glassCard = document.getElementById('glass-card');
 const authForm = document.getElementById('auth-form');
 const usernameInput = document.getElementById('username');
-const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 const birthdateInput = document.getElementById('birthdate');
 const birthdateGroup = document.querySelector('.id-signup-only');
@@ -22,7 +21,7 @@ const submitBtn = document.getElementById('submit-btn');
 
 // --- INTERACTIVE BACKGROUND PARTICLE ENGINE ---
 let particles = [];
-const mouse = { x: null, y: null, radius: 150 };
+const mouse = { x: null, y: null, radius: 180 };
 
 window.addEventListener('mousemove', (e) => {
     mouse.x = e.clientX;
@@ -45,9 +44,9 @@ class Particle {
     constructor() {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
-        this.vx = (Math.random() - 0.5) * 1.5;
-        this.vy = (Math.random() - 0.5) * 1.5;
-        this.radius = Math.random() * 2 + 1;
+        this.vx = (Math.random() - 0.5) * 1.2;
+        this.vy = (Math.random() - 0.5) * 1.2;
+        this.radius = Math.random() * 2 + 1.5;
     }
     update() {
         this.x += this.vx;
@@ -61,23 +60,24 @@ class Particle {
             let dy = mouse.y - this.y;
             let distance = Math.sqrt(dx * dx + dy * dy);
             if (distance < mouse.radius) {
+                // Pull particles gently around the cursor
                 let force = (mouse.radius - distance) / mouse.radius;
-                this.x -= (dx / distance) * force * 3;
-                this.y -= (dy / distance) * force * 3;
+                this.x += (dx / distance) * force * 1.5;
+                this.y += (dy / distance) * force * 1.5;
             }
         }
     }
     draw() {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
         ctx.fill();
     }
 }
 
 function initParticles() {
     particles = [];
-    let count = Math.floor((canvas.width * canvas.height) / 9000);
+    let count = Math.floor((canvas.width * canvas.height) / 8000);
     for (let i = 0; i < count; i++) {
         particles.push(new Particle());
     }
@@ -99,8 +99,8 @@ function connectLines() {
             let dy = particles[a].y - particles[b].y;
             let dist = Math.sqrt(dx * dx + dy * dy);
 
-            if (dist < 100) {
-                let alpha = (100 - dist) / 100 * 0.15;
+            if (dist < 110) {
+                let alpha = (110 - dist) / 110 * 0.2;
                 ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
                 ctx.lineWidth = 1;
                 ctx.beginPath();
@@ -121,11 +121,14 @@ let isHovered = false;
 cardContainer.addEventListener('mouseenter', () => { isHovered = true; });
 cardContainer.addEventListener('mouseleave', () => { 
     isHovered = false;
-    glassCard.style.transform = 'rotateX(0deg) rotateY(0deg)';
 });
 
 window.addEventListener('mousemove', (e) => {
-    if (isHovered) return; 
+    if (isHovered) {
+        // Reset transformation when card is directly hovered
+        glassCard.style.transform = 'rotateX(0deg) rotateY(0deg) translateZ(10px)';
+        return; 
+    }
 
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
@@ -133,10 +136,11 @@ window.addEventListener('mousemove', (e) => {
     const dx = e.clientX - centerX;
     const dy = e.clientY - centerY;
 
-    const tiltX = -(dy / centerY) * 15; 
-    const tiltY = (dx / centerX) * 15;
+    // Direct 3D alignment pointing towards the cursor location
+    const tiltX = -(dy / centerY) * 20; 
+    const tiltY = (dx / centerX) * 20;
 
-    glassCard.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+    glassCard.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(0px)`;
 });
 
 // --- AUTHENTICATION MODE UI CONTROLS ---
@@ -160,14 +164,16 @@ function switchAuthMode(mode) {
 authForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const email = emailInput.value;
+    const username = usernameInput.value.trim();
     const password = passwordInput.value;
-    const username = usernameInput.value;
     const birthdate = birthdateInput.value;
+    
+    // Virtual email syntax layer generation to bypass explicit user email requirements
+    const virtualEmail = `${username.toLowerCase()}@chat.unblocked`;
 
     if (authMode === 'signup') {
         const { data, error } = await supabase.auth.signUp({
-            email: email,
+            email: virtualEmail,
             password: password,
             options: {
                 data: {
@@ -189,12 +195,12 @@ authForm.addEventListener('submit', async (e) => {
 
     } else {
         const { data, error } = await supabase.auth.signInWithPassword({
-            email: email,
+            email: virtualEmail,
             password: password
         });
 
         if (error) {
-            alert(`Login Error: ${error.message}`);
+            alert(`Login Error: Username or password invalid.`);
             return;
         }
         
