@@ -17,6 +17,7 @@
     } catch {}
   };
 
+  // Baseline mock account seed profile parameters
   if (!localStorage.getItem('moon-chat-accounts')) {
     const defaultAccounts = {
       "user": { username: "User", password: "password", birthdate: "2000-01-01", picture: "", showAge: true, role: "member", banned: false, mutedUntil: 0 },
@@ -43,7 +44,10 @@
 
   const show = id => {
     document.querySelectorAll('.form-step').forEach(x => x.classList.remove('active'));
-    $(id)?.classList.add('active');
+    const targetElement = $(id);
+    if (targetElement) {
+      targetElement.classList.add('active');
+    }
   };
 
   const img = (el, url) => {
@@ -184,7 +188,10 @@
     img(('profile-preview-image'), ('profile-picture').value.trim());
   }
 
-  ['font-family', 'font-color', 'glow-toggle', 'profile-picture'].forEach(id => \$(id).addEventListener('input', preview));
+  ['font-family', 'font-color', 'glow-toggle', 'profile-picture'].forEach(id => {
+    const element = \$(id);
+    if (element) element.addEventListener('input', preview);
+  });
   \$('save-profile-btn').onclick = () => {
     currentUser.picture = \$('profile-picture').value.trim();
     currentUser.font = \$('font-family').value;
@@ -235,7 +242,7 @@
     
     const n = document.createElement('button');
     n.className = 'msg-author';
-    n.textContent = n.textContent = m.username;
+    n.textContent = m.username;
     n.onclick = () => openProfile(m.username);
     
     const t = document.createElement('time');
@@ -502,5 +509,7 @@
     };
   }
 
+  // Force system back to the fresh login screen frame on start up
   setMode('login');
+  show('auth-section');
 })();
