@@ -1,271 +1,40 @@
 (() => {
   'use strict';
+  const $ = id => document.getElementById(id);
+  const channels = [
+    { id: 'general', name: 'general', topic: 'Welcome to Moon Chat' },
+    { id: 'off-topic', name: 'off-topic', topic: 'Talk about anything' },
+    { id: 'gaming', name: 'gaming', topic: 'Games, clips, and squads' },
+    { id: 'help', name: 'help', topic: 'Ask the community' }
+  ];
+  let mode = 'login', user = null, activeChannel = 'general';
 
-  const $ = (id) => document.getElementById(id);
+  const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch { return fallback; } };
+  const write = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
+  const show = id => { document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active')); $(id)?.classList.add('active'); };
 
-  function start() {
-    const required = ['bg-canvas', 'card-container', 'glass-card', 'auth-form', 'toggle-login', 'toggle-signup', 'submit-btn', 'chat-input-form'];
-    if (required.some((id) => !$(id))) return;
+  // Background dots
+  const canvas = $('bg-canvas'), ctx = canvas.getContext('2d'), mouse = { x: -999, y: -999 }; let dots = [];
+  function resize() { const d = Math.min(devicePixelRatio || 1, 2); canvas.width = innerWidth * d; canvas.height = innerHeight * d; ctx.setTransform(d,0,0,d,0,0); dots = Array.from({ length: Math.max(80, Math.min(180, innerWidth * innerHeight / 10000)) }, () => ({ x: Math.random()*innerWidth, y: Math.random()*innerHeight, vx: (Math.random()-.5)*.25, vy: (Math.random()-.5)*.25, r: Math.random()*1.5+.5 })); }
+  function animate() { ctx.clearRect(0,0,innerWidth,innerHeight); dots.forEach(p => { const dx=mouse.x-p.x, dy=mouse.y-p.y, dist=Math.hypot(dx,dy); if(dist<170&&dist>0){const f=(170-dist)/170;p.x+=dx/dist*f*.8;p.y+=dy/dist*f*.8;} p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>innerWidth)p.vx*=-1;if(p.y<0||p.y>innerHeight)p.vy*=-1;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();}); requestAnimationFrame(animate); }
+  addEventListener('resize', resize); addEventListener('mousemove', e => { mouse.x=e.clientX;mouse.y=e.clientY; const card=$('card-container'), panel=$('glass-card'); if(!card.matches(':hover')) panel.style.transform=`rotateX(${-(e.clientY/innerHeight-.5)*12}deg) rotateY(${(e.clientX/innerWidth-.5)*12}deg)`; }); $('card-container').addEventListener('mouseenter', () => $('glass-card').style.transform='rotateX(0) rotateY(0)'); resize(); animate();
 
-    const canvas = $('bg-canvas');
-    const ctx = canvas.getContext('2d');
-    const card = $('card-container');
-    const panel = $('glass-card');
-    const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-    let particles = [];
-    let authMode = 'login';
-    let currentUser = null;
+  function status(message='') { $('form-status').textContent = message; }
+  function setMode(next) { mode=next; $('toggle-login').classList.toggle('active',mode==='login');$('toggle-signup').classList.toggle('active',mode==='signup');$('auth-title').textContent=mode==='login'?'Welcome back':'Create an account';$('submit-btn').textContent=mode==='login'?'Login':'Create account';$('birthdate-group').classList.toggle('hidden',mode!=='signup');$('birthdate').required=mode==='signup';status(); }
+  $('toggle-login').onclick=()=>setMode('login'); $('toggle-signup').onclick=()=>setMode('signup');
 
-    function readJSON(key, fallback) {
-      try {
-        const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-      } catch {
-        return fallback;
-      }
-    }
+  $('auth-form').onsubmit = e => { e.preventDefault(); const name=$('username').value.trim(), password=$('password').value, birthdate=$('birthdate').value; if(!name||password.length<4||(mode==='signup'&&!birthdate)){status('Complete the required fields.');return;} const accounts=read('moon-chat-accounts',{}), key=name.toLowerCase(); if(mode==='signup'){if(accounts[key]){status('That username is already taken.');return;} user={username:name,password,birthdate,role:key==='steezy'?'owner':'member',banned:false,mutedUntil:0};accounts[key]=user;write('moon-chat-accounts',accounts);$('username-preview').textContent=name;show('customize-section');}else{user=accounts[key];if(!user||user.password!==password){status('Incorrect username or password.');return;}if(user.banned){status('This account is banned.');return;}if(key==='steezy'){user.role='owner';accounts[key]=user;write('moon-chat-accounts',accounts);}enterChat();} };
 
-    function writeJSON(key, value) {
-      try {
-        localStorage.setItem(key, JSON.stringify(value));
-      } catch {
-        // Ignore storage failures gracefully.
-      }
-    }
+  function preview(){const c=$('font-color').value,p=$('username-preview');p.style.fontFamily=$('font-family').value;p.style.color=c;p.style.textShadow=$('glow-toggle').checked?`0 0 14px ${c}`:'none';}
+  ['font-family','font-color','glow-toggle'].forEach(id=>$(id).addEventListener('input',preview)); $('save-profile-btn').onclick=()=>{user.font=$('font-family').value;user.color=$('font-color').value;user.glow=$('glow-toggle').checked;const a=read('moon-chat-accounts',{});a[user.username.toLowerCase()]=user;write('moon-chat-accounts',a);enterChat();};
 
-    function resizeCanvas() {
-      const ratio = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.floor(window.innerWidth * ratio);
-      canvas.height = Math.floor(window.innerHeight * ratio);
-      canvas.style.width = `${window.innerWidth}px`;
-      canvas.style.height = `${window.innerHeight}px`;
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-
-      const count = Math.max(80, Math.min(180, Math.round((window.innerWidth * window.innerHeight) / 14)));
-      particles = Array.from({ length: count }, () => ({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        vx: (Math.random() - 0.5) * 0.35,
-        vy: (Math.random() - 0.5) * 0.35,
-        radius: Math.random() * 1.6 + 0.8,
-      }));
-    }
-
-    function animateBackground() {
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-
-      for (const p of particles) {
-        const dx = mouse.x - p.x;
-        const dy = mouse.y - p.y;
-        const distance = Math.hypot(dx, dy);
-
-        if (distance < 180 && distance > 0) {
-          const force = (180 - distance) / 180;
-          p.x += (dx / distance) * force * 0.9;
-          p.y += (dy / distance) * force * 0.9;
-        }
-
-        p.x += p.vx;
-        p.y += p.vy;
-
-        if (p.x <= 0 || p.x >= window.innerWidth) p.vx *= -1;
-        if (p.y <= 0 || p.y >= window.innerHeight) p.vy *= -1;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.fill();
-      }
-
-      requestAnimationFrame(animateBackground);
-    }
-
-    window.addEventListener('resize', resizeCanvas);
-    window.addEventListener('mousemove', (event) => {
-      mouse.x = event.clientX;
-      mouse.y = event.clientY;
-
-      if (card.matches(':hover')) return;
-
-      const rotateY = ((event.clientX / window.innerWidth) - 0.5) * 16;
-      const rotateX = -((event.clientY / window.innerHeight) - 0.5) * 16;
-      panel.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-    });
-
-    card.addEventListener('mouseenter', () => {
-      panel.style.transform = 'rotateX(0deg) rotateY(0deg)';
-    });
-
-    card.addEventListener('mouseleave', () => {
-      panel.style.transform = 'rotateX(0deg) rotateY(0deg)';
-    });
-
-    resizeCanvas();
-    animateBackground();
-
-    function setStatus(message = '') {
-      const statusNode = $('form-status');
-      if (statusNode) statusNode.textContent = message;
-    }
-
-    function showStep(id) {
-      document.querySelectorAll('.form-step').forEach((section) => {
-        section.classList.remove('active');
-      });
-      const target = $(id);
-      if (target) target.classList.add('active');
-    }
-
-    function setMode(mode) {
-      authMode = mode;
-      const loginBtn = $('toggle-login');
-      const signupBtn = $('toggle-signup');
-      const title = $('auth-title');
-      const submitBtn = $('submit-btn');
-      const birthdateGroup = $('birthdate-group');
-      const birthdateInput = $('birthdate');
-
-      loginBtn.classList.toggle('active', mode === 'login');
-      signupBtn.classList.toggle('active', mode === 'signup');
-      loginBtn.setAttribute('aria-selected', String(mode === 'login'));
-      signupBtn.setAttribute('aria-selected', String(mode === 'signup'));
-      title.textContent = mode === 'login' ? 'Welcome back' : 'Create an account';
-      submitBtn.textContent = mode === 'login' ? 'Login' : 'Create account';
-      birthdateGroup.classList.toggle('hidden', mode !== 'signup');
-      birthdateInput.required = mode === 'signup';
-      setStatus('');
-    }
-
-    $('toggle-login').addEventListener('click', () => setMode('login'));
-    $('toggle-signup').addEventListener('click', () => setMode('signup'));
-
-    function getAccounts() {
-      return readJSON('moon-chat-accounts', {});
-    }
-
-    function saveAccounts(accounts) {
-      writeJSON('moon-chat-accounts', accounts);
-    }
-
-    $('auth-form').addEventListener('submit', (event) => {
-      event.preventDefault();
-      const username = $('username').value.trim();
-      const password = $('password').value;
-      const birthdate = $('birthdate').value;
-
-      if (!username || password.length < 4 || (authMode === 'signup' && !birthdate)) {
-        setStatus(authMode === 'signup' ? 'Please complete all fields.' : 'Enter a username and password with at least 4 characters.');
-        return;
-      }
-
-      const accounts = getAccounts();
-
-      if (authMode === 'signup') {
-        if (accounts[username]) {
-          setStatus('That username is already taken.');
-          return;
-        }
-
-        currentUser = { username, password, role: 'user', birthdate };
-        accounts[username] = currentUser;
-        saveAccounts(accounts);
-        $('username-preview').textContent = username;
-        showStep('customize-section');
-        return;
-      }
-
-      const account = accounts[username];
-      if (!account || account.password !== password) {
-        setStatus('Incorrect username or password.');
-        return;
-      }
-
-      currentUser = account;
-      enterChat();
-    });
-
-    function previewProfile() {
-      const color = $('font-color').value;
-      const preview = $('username-preview');
-      preview.style.fontFamily = $('font-family').value;
-      preview.style.color = color;
-      preview.style.textShadow = $('glow-toggle').checked ? `0 0 14px ${color}` : 'none';
-    }
-
-    $('font-family').addEventListener('change', previewProfile);
-    $('font-color').addEventListener('input', previewProfile);
-    $('glow-toggle').addEventListener('change', previewProfile);
-
-    $('save-profile-btn').addEventListener('click', () => {
-      if (!currentUser) return;
-      currentUser.font = $('font-family').value;
-      currentUser.color = $('font-color').value;
-      currentUser.glow = $('glow-toggle').checked;
-
-      const accounts = getAccounts();
-      accounts[currentUser.username] = currentUser;
-      saveAccounts(accounts);
-
-      enterChat();
-    });
-
-    function renderMessage(message) {
-      const container = $('message-container');
-      if (!container) return;
-
-      const block = document.createElement('div');
-      block.className = 'msg-block';
-
-      const author = document.createElement('span');
-      author.className = 'msg-author';
-      author.textContent = message.username;
-
-      const text = document.createElement('span');
-      text.className = 'msg-text';
-      text.textContent = message.content;
-
-      block.append(author, text);
-      container.appendChild(block);
-      container.scrollTop = container.scrollHeight;
-    }
-
-    function loadMessages() {
-      const container = $('message-container');
-      if (!container) return;
-      container.innerHTML = '';
-      const messages = readJSON('moon-chat-messages', []);
-      messages.forEach(renderMessage);
-    }
-
-    function enterChat() {
-      const roleBadge = $('user-role-badge');
-      roleBadge.textContent = `Role: ${(currentUser?.role || 'user').toUpperCase()}`;
-      card.style.maxWidth = '780px';
-      showStep('chat-section');
-      loadMessages();
-      $('chat-msg').focus();
-    }
-
-    $('chat-input-form').addEventListener('submit', (event) => {
-      event.preventDefault();
-      const input = $('chat-msg');
-      const content = input.value.trim();
-      if (!content) return;
-
-      const messages = readJSON('moon-chat-messages', []);
-      messages.push({ username: currentUser?.username || 'Guest', content });
-      writeJSON('moon-chat-messages', messages.slice(-80));
-      renderMessage({ username: currentUser?.username || 'Guest', content });
-      input.value = '';
-    });
-
-    previewProfile();
-    setMode('login');
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', start, { once: true });
-  } else {
-    start();
-  }
+  function messageKey(){return `moon-chat-messages-${activeChannel}`;}
+  function renderMessage(msg){const block=document.createElement('article');block.className='msg-block';const head=document.createElement('div');head.className='message-head';const author=document.createElement('b');author.textContent=msg.username;const time=document.createElement('time');time.textContent=msg.time||'';head.append(author,time);const text=document.createElement('p');text.textContent=msg.content;block.append(head,text);if(user?.role==='owner'&&msg.username.toLowerCase()!=='steezy'){const tools=document.createElement('div');tools.className='mod-tools';[['timeout','Timeout'],['mute','Mute'],['ban','Ban']].forEach(([action,label])=>{const b=document.createElement('button');b.textContent=label;b.onclick=()=>moderate(action,msg.username);tools.append(b);});block.append(tools);} $('message-container').append(block);}
+  function loadMessages(){ $('message-container').innerHTML='';read(messageKey(),[]).forEach(renderMessage);$('message-container').scrollTop=$('message-container').scrollHeight; }
+  function renderChannels(){const list=$('channel-list');list.innerHTML='';channels.forEach(ch=>{const b=document.createElement('button');b.className=`channel-btn ${ch.id===activeChannel?'active':''}`;b.innerHTML=`<span>#</span>${ch.name}`;b.onclick=()=>selectChannel(ch.id);list.append(b);});}
+  function selectChannel(id){activeChannel=id;const ch=channels.find(c=>c.id===id);$('room-title').textContent=`# ${ch.name}`;$('channel-topic').textContent=ch.topic;$('chat-msg').placeholder=`Message # ${ch.name}`;renderChannels();loadMessages();}
+  function enterChat(){ $('sidebar-username').textContent=user.username;$('sidebar-role').textContent=user.role==='owner'?'Owner':'Member';$('user-avatar').textContent=user.username[0].toUpperCase();$('user-role-badge').textContent=user.role.toUpperCase();$('card-container').style.maxWidth='1080px';show('chat-section');renderChannels();selectChannel(activeChannel);$('chat-msg').focus(); }
+  function moderate(action,target){if(user?.role!=='owner')return;const accounts=read('moon-chat-accounts',{}),key=target.toLowerCase();if(!accounts[key])return;if(action==='ban')accounts[key].banned=true;if(action==='mute')accounts[key].mutedUntil=Date.now()+365*24*60*60*1000;if(action==='timeout')accounts[key].mutedUntil=Date.now()+10*60*1000;write('moon-chat-accounts',accounts);alert(`${target} was ${action}d.`);}
+  $('chat-input-form').onsubmit=e=>{e.preventDefault();const input=$('chat-msg'),content=input.value.trim();if(!content||!user)return;const accounts=read('moon-chat-accounts',{}),stored=accounts[user.username.toLowerCase()];if(stored?.mutedUntil>Date.now()){alert('You are currently muted.');return;}const msg={username:user.username,content,time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})};const messages=read(messageKey(),[]);messages.push(msg);write(messageKey(),messages.slice(-100));renderMessage(msg);input.value='';$('message-container').scrollTop=$('message-container').scrollHeight;};
+  preview();setMode('login');
 })();
