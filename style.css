@@ -113,7 +113,6 @@ h2 {
     background: rgba(255, 255, 255, 0.15);
     color: #fff;
 }
-
 /* Inputs & Form Elements */
 .input-group {
     display: flex;
@@ -225,7 +224,6 @@ h2 {
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
 }
-
 #message-container {
     flex: 1;
     overflow-y: auto;
