@@ -26,10 +26,9 @@
   let activeChannel = 'general';
   let userListTabMode = 'online'; 
 
-  const supabaseUrl = 'https://supabase.com';
-  const supabaseKey = 'sb_publishable_oD3pjw8LGY6uFblF0azYZQ_5CuGNZtL';
-  const supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
-  let realtimeChannel = null;
+  // Global low-latency network variables
+  let socket = null;
+  let heartbeatLoop = null;
   let registeredActiveMeshMembers = new Map();
 
   const channels = {
@@ -335,70 +334,57 @@
   }
 
   function initWebSocketSync() {
-    if (!supabase) return;
-    if (realtimeChannel) return;
+    if (socket) return;
 
     window.addEventListener('storage', (e) => {
       if (e.key === key()) {
-        const currentCount = document.getElementById('message-container')?.children.length || 0;
-        const latestData = read(key(), []);
-        if (latestData.length > currentCount) {
-          load();
-        }
+        load();
       }
     });
 
-    realtimeChannel = supabase.channel('moon-chat-global-room-2026', {
-      config: { broadcast: { self: false }, presence: { key: currentUser.username.toLowerCase() } }
-    });
+    // Fix: Connects to a free public Open-Access SocketsBay Relay node channel cluster
+    socket = new WebSocket('wss://://socketsbay.com');
 
-    realtimeChannel.on('broadcast', { event: 'shuttle-msg' }, payload => {
-      const data = payload.payload;
-      if (data && data.channel === activeChannel) {
-        const ms = read(`moon-chat-messages-${data.channel}`, []);
-        if (!ms.some(existing => existing.id === data.msg.id)) {
-          ms.push(data.msg);
-          write(`moon-chat-messages-${data.channel}`, ms.slice(-100));
-          render(data.msg);
-          scrollToBottom();
+    socket.onopen = () => {
+      broadcastPresence();
+      heartbeatLoop = setInterval(broadcastPresence, 5000);
+    };
+
+    socket.onmessage = e => {
+      try {
+        const data = JSON.parse(e.data);
+        if (!data || !data.type) return;
+
+        if (data.type === 'PING') {
+          registeredActiveMeshMembers.set(data.username.toLowerCase(), { username: data.username, lastSeen: Date.now() });
+          renderUserSidebarList();
         }
-      }
-    });
 
-    realtimeChannel.on('presence', { event: 'sync' }, () => {
-      const state = realtimeChannel.presenceState();
-      registeredActiveMeshMembers.clear();
-      Object.keys(state).forEach(k => {
-        const presenceInfo = state[k];
-        if (presenceInfo && presenceInfo.username) {
-          registeredActiveMeshMembers.set(k, { username: presenceInfo.username, lastSeen: Date.now() });
+        if (data.type === 'CHAT' && data.channel === activeChannel) {
+          const ms = read(`moon-chat-messages-${data.channel}`, []);
+          if (!ms.some(existing => existing.id === data.msg.id)) {
+            ms.push(data.msg);
+            write(`moon-chat-messages-${data.channel}`, ms.slice(-100));
+            render(data.msg); // Incremental Live Render: updates page without touching your text cursor
+            scrollToBottom();
+          }
         }
-      });
-      renderUserSidebarList();
-    });
-
-    realtimeChannel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await realtimeChannel.track({ username: currentUser.username, onlineAt: new Date().toISOString() });
+      } catch (err) {
+        console.error(err);
       }
-    });
+    };
 
-    // Background safety poll that checks for incoming changes every second without losing focus
-    setInterval(() => {
-      if (currentUser) {
-        const container = document.getElementById('message-container');
-        const currentCount = container ? container.children.length : 0;
-        const cachedMessages = read(key(), []);
-        
-        if (cachedMessages.length > currentCount) {
-          cachedMessages.forEach(msg => render(msg));
-          scrollToBottom();
-        }
-        renderUserSidebarList();
-      }
-    }, 1000);
+    socket.onclose = () => {
+      clearInterval(heartbeatLoop);
+      socket = null;
+      setTimeout(initWebSocketSync, 2000);
+    };
   }
-  function broadcastPresence() {}
+  function broadcastPresence() {
+    if (socket && socket.readyState === WebSocket.OPEN && currentUser) {
+      socket.send(JSON.stringify({ type: 'PING', username: currentUser.username }));
+    }
+  }
 
   function renderUserSidebarList() {
     const listContainer = document.getElementById('users-box-list');
@@ -406,6 +392,15 @@
     listContainer.replaceChildren();
 
     const accounts = read('moon-chat-accounts', {});
+    const now = Date.now();
+
+    // Automatically sweeps out stale presence maps for users who left over 12 seconds ago
+    registeredActiveMeshMembers.forEach((val, k) => {
+      if (k !== currentUser.username.toLowerCase() && now - val.lastSeen > 12000) {
+        registeredActiveMeshMembers.delete(k);
+      }
+    });
+
     Object.keys(accounts).forEach(keyName => {
       const account = accounts[keyName];
       const isOnline = registeredActiveMeshMembers.has(keyName) || account.username.toLowerCase() === currentUser.username.toLowerCase();
@@ -468,12 +463,8 @@
       render(m);
       scrollToBottom();
 
-      if (realtimeChannel) {
-        realtimeChannel.send({
-          type: 'broadcast',
-          event: 'shuttle-msg',
-          payload: { channel: activeChannel, msg: m }
-        });
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'CHAT', channel: activeChannel, msg: m }));
       }
       if (chatMsgInput) chatMsgInput.value = '';
     };
