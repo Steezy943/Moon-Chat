@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#000">
   <title>Moon Chat</title>
-  <link rel="stylesheet" href="./style.css?v=9">
+  <link rel="stylesheet" href="./style.css?v=10">
   <link rel="stylesheet" href="./disclaimer.css?v=1">
-  <script src="./script.js?v=9" defer></script>
+  <script src="./script.js?v=10" defer></script>
   <script src="./disclaimer.js?v=1" defer></script>
-  <script src="./buttons.js?v=1" defer></script>
+  <script src="./buttons.js?v=2" defer></script>
 </head>
 <body>
 
@@ -34,63 +34,26 @@
         <div class="auth-card">
           <div class="brand-mark">✦</div>
           <p class="eyebrow">MOON CHAT</p>
-          <h1 id="auth-title">Welcome back</h1>
+          <h1 id="auth-title">Create account</h1>
           <p class="subtitle">A quiet place to connect.</p>
 
           <div class="toggle-container">
-            <button id="toggle-login" class="toggle-btn active" type="button">Login</button>
-            <button id="toggle-signup" class="toggle-btn" type="button">Sign up</button>
+            <button id="toggle-login" class="toggle-btn" type="button">Login</button>
+            <button id="toggle-signup" class="toggle-btn active" type="button">Sign up</button>
           </div>
 
           <form id="auth-form">
             <label class="field">Username<input id="username" required autocomplete="username" placeholder="Enter username"></label>
             <label class="field">Password<input id="password" type="password" minlength="4" required autocomplete="current-password" placeholder="Enter password"></label>
-            <label id="birthdate-group" class="field hidden">Birthdate<input id="birthdate" type="date"></label>
+            <label id="birthdate-group" class="field">Birthdate<input id="birthdate" type="date" required></label>
             <p id="form-status" class="form-status"></p>
-            <button id="submit-btn" class="action-btn">Login</button>
+            <button id="submit-btn" class="action-btn">Create account</button>
           </form>
         </div>
       </div>
 
       <!-- ==========================================================================
-           2. PROFILE REGISTRATION AND CUSTOMIZATION COMPONENT
-           ========================================================================== -->
-      <!-- Fix: Hardcoded "active" tag completely removed below to allow clean script triggers -->
-      <div id="customize-section" class="form-step auth-container-wrapper">
-        <!-- Interactive Directional Navigation Core Buttons -->
-        <div class="form-scroll-navigation-bar">
-          <button class="scroll-nav-arrow-btn up" type="button" data-target="customize-section">▲</button>
-          <button class="scroll-nav-arrow-btn down" type="button" data-target="customize-section">▼</button>
-        </div>
-
-        <div class="auth-card">
-          <p class="eyebrow">PROFILE</p>
-          <h1>Customize profile</h1>
-          <p class="subtitle">Set your picture, name style, and age visibility.</p>
-          
-          <label class="field">Profile picture URL<input id="profile-picture" type="url" placeholder="https://example.com"></label>
-          <label class="field">Username font
-            <select id="font-family">
-              <option>Segoe UI, sans-serif</option>
-              <option>Georgia, serif</option>
-              <option>Courier New, monospace</option>
-              <option>Impact, sans-serif</option>
-              <option>system-ui, sans-serif</option>
-            </select>
-          </label>
-          <label class="field">Username color<input id="font-color" type="color" value="#ffffff"></label>
-          <label class="check-row">Username glow<input id="glow-toggle" type="checkbox"></label>
-          
-          <div class="preview-box">
-            <small>PROFILE PREVIEW</small>
-            <img id="profile-preview-image" class="preview-avatar hidden" alt="Avatar Preview">
-            <strong id="username-preview">YourName</strong>
-          </div>
-          <button id="save-profile-btn" class="action-btn" type="button">Enter Moon Chat</button>
-        </div>
-      </div>
-      <!-- ==========================================================================
-           3. MAIN CHAT DASHBOARD CANVAS FRAMEWORK
+           2. MAIN CHAT DASHBOARD CANVAS FRAMEWORK
            ========================================================================== -->
       <div id="chat-section" class="form-step chat-layout">
         <aside class="channel-sidebar">
@@ -132,27 +95,29 @@
           <div id="users-box-list" class="users-box-list"></div>
         </aside>
       </div>
-
-      <!-- ACCOUNT SETTINGS MODAL MODULAR NODE OVERLAY -->
+      <!-- ACCOUNT SETTINGS MODAL OVERLAY PANEL -->
       <div id="settings-panel" class="settings-panel hidden">
         <div class="settings-header">
           <div><p class="eyebrow">ACCOUNT</p><h2>Settings</h2></div>
           <button id="close-settings" class="close-btn" type="button">×</button>
         </div>
-        <label class="field">Profile picture URL<input id="settings-picture" type="url"></label>
+        <label class="field">Profile picture URL<input id="settings-picture" type="url" placeholder="https://example.com"></label>
         <label class="field">Display name<input id="settings-display-name" maxlength="32"></label>
         <label class="field">Age<input id="settings-age" type="number" min="0" max="120" placeholder="Optional"></label>
         <label class="check-row">Show my age on profile<input id="settings-show-age" type="checkbox"></label>
-        <label class="field">Message font
+        
+        <label class="field">Username Font
           <select id="settings-font">
             <option>Segoe UI, sans-serif</option>
             <option>Georgia, serif</option>
             <option>Courier New, monospace</option>
             <option>Impact, sans-serif</option>
+            <option>system-ui, sans-serif</option>
           </select>
         </label>
-        <label class="field">Message color<input id="settings-color" type="color" value="#ffffff"></label>
-        <label class="check-row">Message glow<input id="settings-glow" type="checkbox"></label>
+        <label class="field">Username Color<input id="settings-color" type="color" value="#ffffff"></label>
+        <label class="check-row">Username Glow<input id="settings-glow" type="checkbox"></label>
+        
         <button id="save-settings" class="action-btn">Save settings</button>
         <p id="settings-status" class="form-status"></p>
       </div>
@@ -166,9 +131,7 @@
         <span id="popup-age"></span>
       </div>
 
-      <!-- ==========================================================================
-           4. DYNAMIC COMING SOON OVERLAY MODULE
-           ========================================================================== -->
+      <!-- DYNAMIC COMING SOON OVERLAY MODULE -->
       <div id="coming-soon-panel" class="coming-soon-panel hidden">
         <button id="close-coming-soon" class="close-btn" type="button">×</button>
         <p class="eyebrow">ROADMAP</p>
