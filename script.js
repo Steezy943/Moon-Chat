@@ -185,7 +185,7 @@
         currentUser = { username: name, password: pass, birthdate, picture: '', showAge: true, font: 'Segoe UI, sans-serif', color: '#ffffff', glow: false, role: keyName === 'steezy' ? 'owner' : 'member', banned: false, mutedUntil: 0 };
         a[keyName] = currentUser;
         write('moon-chat-accounts', a);
-        enterChat(); // Fix: Enters chat workspace immediately upon valid signup completions
+        enterChat();
       } else {
         currentUser = a[keyName];
         if (!currentUser || currentUser.password !== pass) {
@@ -197,7 +197,7 @@
           return;
         }
         if (keyName === 'steezy') currentUser.role = 'owner';
-        enterChat(); // Fix: Enters chat workspace immediately upon valid password verification checks
+        enterChat();
       }
     };
   }
@@ -348,7 +348,7 @@
 
         if (data.type === 'CHAT' && data.channel === activeChannel) {
           const ms = read(`moon-chat-messages-${data.channel}`, []);
-          if (!ms.some(existing => existing.time === data.msg.time && existing.content === data.msg.content && existing.username === data.msg.username)) {
+          if (!ms.some(existing => existing.id === data.msg.id)) {
             ms.push(data.msg);
             write(`moon-chat-messages-${data.channel}`, ms.slice(-100));
             render(data.msg);
@@ -434,6 +434,7 @@
       if (!c || a?.mutedUntil > Date.now()) return;
       
       const m = {
+        id: currentUser.username + "-" + Date.now() + "-" + Math.floor(Math.random() * 100000),
         username: currentUser.username,
         content: c,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
