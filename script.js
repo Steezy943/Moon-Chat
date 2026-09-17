@@ -21,14 +21,16 @@
     localStorage.setItem('moon-chat-accounts', JSON.stringify({}));
   }
 
-  let peer = null;
-  let activeConnections = [];
-  const PEER_ROOM_PREFIX = "moon-chat-global-room-2026-";
-
   let mode = 'signup';
   let currentUser = null;
   let activeChannel = 'general';
   let userListTabMode = 'online'; 
+
+  // Direct Live Production Supabase Credentials Mapping
+  const supabaseUrl = 'https://supabase.com';
+  const supabaseKey = 'sb_publishable_oD3pjw8LGY6uFblF0azYZQ_5CuGNZtL';
+  const supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
+  let realtimeChannel = null;
   let registeredActiveMeshMembers = new Map();
 
   const channels = {
@@ -337,82 +339,46 @@
     if (!supabase) return;
     if (realtimeChannel) return;
 
-    // Fix: Force different windows in the same browser to sync database streams instantly
     window.addEventListener('storage', (e) => {
       if (e.key === key()) {
-        load(); // Instantly reloads text feed without disrupting your typing focus
-        renderUserSidebarList(); // Instantly refreshes active online/offline members list
-      }
-    });
-
-    // ... rest of your existing channel code ...
-  }
-
-    const uniqueNodeId = PEER_ROOM_PREFIX + currentUser.username.toLowerCase();
-    peer = new Peer(uniqueNodeId);
-
-    peer.on('open', () => {
-      registeredActiveMeshMembers.set(currentUser.username.toLowerCase(), { username: currentUser.username, lastSeen: Date.now() });
-      renderUserSidebarList();
-      
-      const storedAccounts = read('moon-chat-accounts', {});
-      Object.keys(storedAccounts).forEach(userKey => {
-        if (userKey !== currentUser.username.toLowerCase()) {
-          connectToNode(PEER_ROOM_PREFIX + userKey);
-        }
-      });
-    });
-
-    peer.on('connection', conn => {
-      registerNodeEvents(conn);
-    });
-
-    setInterval(() => {
-      activeConnections.forEach(conn => {
-        if (conn.open) {
-          conn.send({ type: 'HEARTBEAT', username: currentUser.username });
-        }
-      });
-    }, 5000);
-  }
-
-  function connectToNode(targetPeerId) {
-    if (activeConnections.some(c => c.peer === targetPeerId)) return;
-    const conn = peer.connect(targetPeerId);
-    registerNodeEvents(conn);
-  }
-
-  function registerNodeEvents(conn) {
-    conn.on('open', () => {
-      if (!activeConnections.some(c => c.peer === conn.peer)) {
-        activeConnections.push(conn);
-      }
-      conn.send({ type: 'HEARTBEAT', username: currentUser.username });
-    });
-
-    conn.on('data', data => {
-      if (data.type === 'CHAT') {
-        const ms = read(`moon-chat-messages-${data.channel}`, []);
-        if (!ms.some(existing => existing.id === data.msg.id)) {
-          ms.push(data.msg);
-          write(`moon-chat-messages-${data.channel}`, ms.slice(-100));
-          if (data.channel === activeChannel) {
-            render(data.msg);
-            scrollToBottom();
-          }
-        }
-      }
-      if (data.type === 'HEARTBEAT') {
-        registeredActiveMeshMembers.set(data.username.toLowerCase(), { username: data.username, lastSeen: Date.now() });
+        load();
         renderUserSidebarList();
       }
     });
 
-    conn.on('close', () => {
-      activeConnections = activeConnections.filter(c => c.peer !== conn.peer);
-      const closedUserKey = conn.peer.replace(PEER_ROOM_PREFIX, '');
-      registeredActiveMeshMembers.delete(closedUserKey);
+    realtimeChannel = supabase.channel('moon-chat-global-room-2026', {
+      config: { broadcast: { self: false }, presence: { key: currentUser.username.toLowerCase() } }
+    });
+
+    realtimeChannel.on('broadcast', { event: 'shuttle-msg' }, payload => {
+      const data = payload.payload;
+      if (data && data.channel === activeChannel) {
+        const ms = read(`moon-chat-messages-${data.channel}`, []);
+        if (!ms.some(existing => existing.id === data.msg.id)) {
+          ms.push(data.msg);
+          write(`moon-chat-messages-${data.channel}`, ms.slice(-100));
+          render(data.msg);
+          scrollToBottom();
+        }
+      }
+    });
+
+    realtimeChannel.on('presence', { event: 'sync' }, () => {
+      const state = realtimeChannel.presenceState();
+      registeredActiveMeshMembers.clear();
+      Object.keys(state).forEach(key => {
+        const presenceInfo = state[key];
+        if (presenceInfo && presenceInfo && presenceInfo.username) {
+          registeredActiveMeshMembers.set(key, { username: presenceInfo.username, lastSeen: Date.now() });
+        }
+      });
       renderUserSidebarList();
+    });
+
+    realtimeChannel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await realtimeChannel.track({ username: currentUser.username, onlineAt: new Date().toISOString() });
+      }
     });
   }
   function broadcastPresence() {}
@@ -423,17 +389,9 @@
     listContainer.replaceChildren();
 
     const accounts = read('moon-chat-accounts', {});
-    const now = Date.now();
-
-    registeredActiveMeshMembers.forEach((val, key) => {
-      if (key !== currentUser.username.toLowerCase() && now - val.lastSeen > 15000) {
-        registeredActiveMeshMembers.delete(key);
-      }
-    });
-
     Object.keys(accounts).forEach(keyName => {
       const account = accounts[keyName];
-      const isOnline = registeredActiveMeshMembers.has(keyName);
+      const isOnline = registeredActiveMeshMembers.has(keyName) || account.username.toLowerCase() === currentUser.username.toLowerCase();
 
       if (userListTabMode === 'online' && !isOnline) return;
       if (userListTabMode === 'offline' && isOnline) return;
@@ -493,11 +451,13 @@
       render(m);
       scrollToBottom();
 
-      activeConnections.forEach(conn => {
-        if (conn.open) {
-          conn.send({ type: 'CHAT', channel: activeChannel, msg: m });
-        }
-      });
+      if (realtimeChannel) {
+        realtimeChannel.send({
+          type: 'broadcast',
+          event: 'shuttle-msg',
+          payload: { channel: activeChannel, msg: m }
+        });
+      }
       if (chatMsgInput) chatMsgInput.value = '';
     };
   }
