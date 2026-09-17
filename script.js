@@ -22,11 +22,11 @@
   }
 
   let mode = 'signup';
- window.currentUser
+  window.currentUser = null; 
   let activeChannel = 'general';
   let userListTabMode = 'online'; 
 
-  // Direct Live Production Supabase Credentials Mapping
+  // Connected Live Production Supabase Channel Sockets
   const supabaseUrl = 'https://supabase.com';
   const supabaseKey = 'sb_publishable_oD3pjw8LGY6uFblF0azYZQ_5CuGNZtL';
   const supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
@@ -185,22 +185,23 @@
         const assignedColor = (keyName === 'steezy') ? '#ff5555' : '#ffffff';
         const assignedGlow = (keyName === 'steezy') ? true : false;
         
-        currentUser = { username: name, password: pass, birthdate, picture: '', showAge: true, font: 'Segoe UI, sans-serif', color: assignedColor, glow: assignedGlow, role: assignedRole, banned: false, mutedUntil: 0 };
-        a[keyName] = currentUser;
+        // Fix: Cleaned global context mapping parameters safely into window object parameters
+        window.currentUser = { username: name, password: pass, birthdate, picture: '', showAge: true, font: 'Segoe UI, sans-serif', color: assignedColor, glow: assignedGlow, role: assignedRole, banned: false, mutedUntil: 0 };
+        a[keyName] = window.currentUser;
         write('moon-chat-accounts', a);
         enterChat();
       } else {
-        currentUser = a[keyName];
-        if (!currentUser || currentUser.password !== pass) {
+        window.currentUser = a[keyName];
+        if (!window.currentUser || window.currentUser.password !== pass) {
           if (formStatus) formStatus.textContent = 'Incorrect username or password.';
           return;
         }
-        if (currentUser.banned) {
+        if (window.currentUser.banned) {
           if (formStatus) formStatus.textContent = 'This account is banned.';
           return;
         }
         if (keyName === 'steezy') {
-          currentUser.role = 'owner';
+          window.currentUser.role = 'owner';
         }
         enterChat();
       }
@@ -265,7 +266,7 @@
     p.textContent = m.content;
     wrapper.append(h, p);
 
-    if (currentUser?.role === 'owner' && m.username.toLowerCase() !== 'steezy') {
+    if (window.currentUser?.role === 'owner' && m.username.toLowerCase() !== 'steezy') {
       const tools = document.createElement('div');
       tools.className = 'mod-tools';
       ['timeout', 'mute', 'ban'].forEach(act => {
@@ -323,11 +324,11 @@
     const roleBadge = document.getElementById('user-role-badge');
     const cardContainer = document.getElementById('card-container');
 
-    if (sidebarUser) sidebarUser.textContent = currentUser.username;
-    if (sidebarRole) sidebarRole.textContent = currentUser.role === 'owner' ? 'Owner' : 'Member';
-    if (userAvatar) userAvatar.textContent = currentUser.username.toUpperCase().charAt(0);
-    if (userAvatarImg) img(userAvatarImg, currentUser.picture);
-    if (roleBadge) roleBadge.textContent = currentUser.role.toUpperCase();
+    if (sidebarUser) sidebarUser.textContent = window.currentUser.username;
+    if (sidebarRole) sidebarRole.textContent = window.currentUser.role === 'owner' ? 'Owner' : 'Member';
+    if (userAvatar) userAvatar.textContent = window.currentUser.username.toUpperCase().charAt(0);
+    if (userAvatarImg) img(userAvatarImg, window.currentUser.picture);
+    if (roleBadge) roleBadge.textContent = window.currentUser.role.toUpperCase();
     if (cardContainer) cardContainer.style.maxWidth = '1140px';
     
     show('chat-section');
@@ -347,7 +348,7 @@
     });
 
     realtimeChannel = supabase.channel('moon-chat-global-room-2026', {
-      config: { broadcast: { self: false }, presence: { key: currentUser.username.toLowerCase() } }
+      config: { broadcast: { self: false }, presence: { key: window.currentUser.username.toLowerCase() } }
     });
 
     realtimeChannel.on('broadcast', { event: 'shuttle-msg' }, payload => {
@@ -377,7 +378,7 @@
 
     realtimeChannel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {
-        await realtimeChannel.track({ username: currentUser.username, onlineAt: new Date().toISOString() });
+        await realtimeChannel.track({ username: window.currentUser.username, onlineAt: new Date().toISOString() });
       }
     });
   }
@@ -391,7 +392,7 @@
     const accounts = read('moon-chat-accounts', {});
     Object.keys(accounts).forEach(keyName => {
       const account = accounts[keyName];
-      const isOnline = registeredActiveMeshMembers.has(keyName) || account.username.toLowerCase() === currentUser.username.toLowerCase();
+      const isOnline = registeredActiveMeshMembers.has(keyName) || account.username.toLowerCase() === window.currentUser.username.toLowerCase();
 
       if (userListTabMode === 'online' && !isOnline) return;
       if (userListTabMode === 'offline' && isOnline) return;
@@ -420,7 +421,7 @@
   }
 
   function moderate(act, target) {
-    if (currentUser?.role !== 'owner') return;
+    if (window.currentUser?.role !== 'owner') return;
     const a = read('moon-chat-accounts', {}), k = target.toLowerCase();
     if (!a[k]) return;
     if (act === 'ban') a[k].banned = true;
@@ -435,12 +436,12 @@
       e.preventDefault();
       const chatMsgInput = document.getElementById('chat-msg');
       const c = chatMsgInput ? chatMsgInput.value.trim() : '';
-      const a = read('moon-chat-accounts', {})[currentUser.username.toLowerCase()];
+      const a = read('moon-chat-accounts', {})[window.currentUser.username.toLowerCase()];
       if (!c || a?.mutedUntil > Date.now()) return;
       
       const m = {
-        id: currentUser.username + "-" + Date.now() + "-" + Math.floor(Math.random() * 100000),
-        username: currentUser.username,
+        id: window.currentUser.username + "-" + Date.now() + "-" + Math.floor(Math.random() * 100000),
+        username: window.currentUser.username,
         content: c,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
@@ -463,8 +464,8 @@
   }
 
   window.openSettings = function() {
-    if (!currentUser) return;
-    const u = currentUser;
+    if (!window.currentUser) return;
+    const u = window.currentUser;
     const setPic = document.getElementById('settings-picture');
     const setDisp = document.getElementById('settings-display-name');
     const setAge = document.getElementById('settings-age');
@@ -510,20 +511,20 @@
       const setColor = document.getElementById('settings-color');
       const setGlow = document.getElementById('settings-glow');
 
-      const old = currentUser.username;
+      const old = window.currentUser.username;
       const keyName = old.toLowerCase();
       const a = read('moon-chat-accounts', {});
 
-      currentUser.username = setDisp && setDisp.value.trim() ? setDisp.value.trim() : old;
-      currentUser.picture = setPic ? setPic.value.trim() : '';
-      currentUser.age = setAge ? setAge.value : '';
-      currentUser.showAge = setShowAge ? setShowAge.checked : true;
-      currentUser.font = setFont ? setFont.value : 'Segoe UI, sans-serif';
-      currentUser.color = setColor ? setColor.value : '#fff';
-      currentUser.glow = setGlow ? setGlow.checked : false;
+      window.currentUser.username = setDisp && setDisp.value.trim() ? setDisp.value.trim() : old;
+      window.currentUser.picture = setPic ? setPic.value.trim() : '';
+      window.currentUser.age = setAge ? setAge.value : '';
+      window.currentUser.showAge = setShowAge ? setShowAge.checked : true;
+      window.currentUser.font = setFont ? setFont.value : 'Segoe UI, sans-serif';
+      window.currentUser.color = setColor ? setColor.value : '#fff';
+      window.currentUser.glow = setGlow ? setGlow.checked : false;
 
       delete a[keyName];
-      a[currentUser.username.toLowerCase()] = currentUser;
+      a[window.currentUser.username.toLowerCase()] = window.currentUser;
       write('moon-chat-accounts', a);
       enterChat();
       const setPanel = document.getElementById('settings-panel');
@@ -538,7 +539,7 @@
       tabOnlineBtn.classList.add('active');
       const tabOfflineBtn = document.getElementById('tab-offline-btn');
       if (tabOfflineBtn) tabOfflineBtn.classList.remove('active');
-      renderUserSidebarList();
+      if (window.currentUser) renderUserSidebarList();
     };
   }
   
@@ -549,12 +550,12 @@
       tabOfflineBtn.classList.add('active');
       const tabOnlineBtn = document.getElementById('tab-online-btn');
       if (tabOnlineBtn) tabOnlineBtn.classList.remove('active');
-      renderUserSidebarList();
+      if (window.currentUser) renderUserSidebarList();
     };
   }
 
   function forceFreshOnboardingStart() {
-    currentUser = null;
+    window.currentUser = null;
     window.setMode('signup');
     show('auth-section');
     const authBox = document.getElementById('auth-section');
