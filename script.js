@@ -334,13 +334,19 @@
   }
 
   function initWebSocketSync() {
-    if (peer) return;
+    if (!supabase) return;
+    if (realtimeChannel) return;
 
+    // Fix: Force different windows in the same browser to sync database streams instantly
     window.addEventListener('storage', (e) => {
       if (e.key === key()) {
-        load();
+        load(); // Instantly reloads text feed without disrupting your typing focus
+        renderUserSidebarList(); // Instantly refreshes active online/offline members list
       }
     });
+
+    // ... rest of your existing channel code ...
+  }
 
     const uniqueNodeId = PEER_ROOM_PREFIX + currentUser.username.toLowerCase();
     peer = new Peer(uniqueNodeId);
