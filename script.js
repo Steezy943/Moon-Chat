@@ -185,7 +185,7 @@
         currentUser = { username: name, password: pass, birthdate, picture: '', showAge: true, font: 'Segoe UI, sans-serif', color: '#ffffff', glow: false, role: keyName === 'steezy' ? 'owner' : 'member', banned: false, mutedUntil: 0 };
         a[keyName] = currentUser;
         write('moon-chat-accounts', a);
-        enterChat();
+        enterChat(); // Fix: Enters chat workspace immediately upon valid signup completions
       } else {
         currentUser = a[keyName];
         if (!currentUser || currentUser.password !== pass) {
@@ -197,7 +197,7 @@
           return;
         }
         if (keyName === 'steezy') currentUser.role = 'owner';
-        enterChat();
+        enterChat(); // Fix: Enters chat workspace immediately upon valid password verification checks
       }
     };
   }
