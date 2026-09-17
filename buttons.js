@@ -4,7 +4,6 @@
   const $ = id => document.getElementById(id);
 
   window.addEventListener('DOMContentLoaded', () => {
-    // 1. LOGIN / SIGNUP TAB SWITCHERS
     const loginTab = $('toggle-login');
     const signupTab = $('toggle-signup');
     
@@ -19,24 +18,19 @@
       });
     }
 
-    // 2. FORMS INTERACTIVE UP/DOWN SCROLL ARROWS
     document.querySelectorAll('.scroll-nav-arrow-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        
-        // Fix: Targets the active scrollable form wrapper box directly
         const parentId = btn.getAttribute('data-target');
         const container = $(parentId);
-        
         if (container) {
-          const distance = btn.classList.contains('down') ? 220 : -220;
+          const distance = btn.classList.contains('down') ? 180 : -180;
           container.scrollBy({ top: distance, behavior: 'smooth' });
         }
       });
     });
 
-    // 3. ROADMAP OVERLAY TOGGLES
     const comingSoonOpen = $('global-coming-soon-trigger');
     const comingSoonClose = $('close-coming-soon');
     const comingSoonPanel = $('coming-soon-panel');
@@ -54,7 +48,6 @@
       });
     }
 
-    // 4. OVERLAY CLOSE SHORTCUTS (SETTINGS & PROFILE POPUPS)
     const closeSettings = $('close-settings');
     const settingsPanel = $('settings-panel');
     if (closeSettings && settingsPanel) {
