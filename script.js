@@ -362,8 +362,8 @@
       
       Object.keys(state).forEach(key => {
         const presenceInfo = state[key];
-        if (presenceInfo && presenceInfo[0] && presenceInfo[0].username) {
-          registeredActiveMeshMembers.set(key, { username: presenceInfo[0].username, lastSeen: Date.now() });
+        if (presenceInfo && presenceInfo && presenceInfo.username) {
+          registeredActiveMeshMembers.set(key, { username: presenceInfo.username, lastSeen: Date.now() });
         }
       });
       renderUserSidebarList();
@@ -374,6 +374,16 @@
         await realtimeChannel.track({ username: currentUser.username, onlineAt: new Date().toISOString() });
       }
     });
+
+    setInterval(() => {
+      if (currentUser) {
+        const cachedMessages = read(key(), []);
+        const displayedBlocks = document.querySelectorAll('.msg-block').length;
+        if (cachedMessages.length !== displayedBlocks) {
+          load();
+        }
+      }
+    }, 1000);
   }
   function broadcastPresence() {
     // Handled natively via Supabase Channel States
