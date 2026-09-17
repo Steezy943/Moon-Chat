@@ -79,7 +79,7 @@ button {
   width: min(calc(100% - 24px), 1140px);
   padding: 12px;
   transform-style: preserve-3d;
-  pointer-events: none;
+  pointer-events: none !important;
 }
 
 .glass-card {
@@ -100,7 +100,7 @@ button {
   overflow: hidden;
   transform-style: preserve-3d;
   transition: transform 0.1s ease-out;
-  pointer-events: auto;
+  pointer-events: auto !important;
 }
 /* ==========================================================================
    5. ULTRA-SLIM AUTHENTICATION SHEETS
@@ -121,7 +121,7 @@ button {
 
 .auth-card {
   width: 100%;
-  max-width: 260px; /* Reduced from 290px to create a highly condensed, slim form layout */
+  max-width: 260px;
   margin: auto;
   display: flex;
   flex-direction: column;
@@ -136,7 +136,6 @@ button {
   height: 100%;
 }
 
-/* Custom Scrollbar configuration parameters for active menus */
 .form-step.active::-webkit-scrollbar {
   width: 4px;
 }
@@ -214,7 +213,7 @@ button {
 h1 {
   text-align: center;
   letter-spacing: -1px;
-  font-size: 28px; /* Slimmed header text size scaling down smoothly */
+  font-size: 28px;
   font-weight: 700;
   margin-top: 4px;
   line-height: 1.15;
@@ -272,7 +271,7 @@ h1 {
 
 .field input, .field select {
   width: 100%;
-  padding: 10px 12px; /* Condensed input field tracking cells */
+  padding: 10px 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
   color: #fff;
@@ -478,7 +477,7 @@ h1 {
 
 .settings-btn:hover {
   color: #fff;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 256, 0.06);
 }
 
 .chat-main {
@@ -504,11 +503,10 @@ h1 {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 20px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
 }
-
 .msg-block {
   display: flex;
   gap: 12px;
@@ -569,6 +567,8 @@ h1 {
   border-left: 1px solid rgba(255, 255, 255, 0.06);
   height: 100%;
   overflow: hidden;
+  position: relative;
+  z-index: 1 !important;
 }
 
 .user-tabs-header {
@@ -594,7 +594,6 @@ h1 {
   color: #fff;
   border-bottom: 2px solid #fff;
 }
-
 .users-box-list {
   flex: 1;
   overflow-y: auto;
@@ -625,8 +624,6 @@ h1 {
 
 .settings-panel, .profile-popup, .coming-soon-panel {
   position: absolute;
-  z-index: 100;
-  padding: 20px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 18px;
   background: rgba(24, 24, 33, 0.97);
@@ -634,12 +631,22 @@ h1 {
   backdrop-filter: blur(20px);
 }
 
-.settings-panel, .coming-soon-panel {
+.settings-panel {
   right: 16px;
   bottom: 16px;
   width: min(340px, calc(100% - 32px));
   max-height: calc(100% - 32px);
   overflow-y: auto;
+  z-index: 9999 !important;
+}
+
+.coming-soon-panel {
+  right: 16px;
+  bottom: 16px;
+  width: min(340px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  overflow-y: auto;
+  z-index: 100 !important;
 }
 
 .roadmap-list-items {
@@ -677,6 +684,7 @@ h1 {
   transform: translate(-50%, -50%);
   width: 240px;
   text-align: center;
+  z-index: 100 !important;
 }
 
 .close-btn {
@@ -687,11 +695,42 @@ h1 {
   color: #666;
   background: transparent;
   font-size: 24px;
+  z-index: 10005 !important;
   pointer-events: auto !important;
+  cursor: pointer !important;
 }
 
 .close-btn:hover {
   color: #fff;
+}
+
+/* ==========================================================================
+   10. AUTOMATED REFRESH BUTTON COMPONENT
+   ========================================================================== */
+.manual-refresh-chatbox-btn {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  pointer-events: auto !important;
+}
+
+.manual-refresh-chatbox-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 @media (max-width: 780px) {
@@ -701,48 +740,4 @@ h1 {
   .user-list-sidebar {
     display: none;
   }
-}
-/* ==========================================================================
-   9. INTERACTION PRIORITY OVERRIDES (POINTER FIX)
-   ========================================================================== */
-/* Fix: Forces the card container to step out of the way of mouse actions */
-.card-container {
-  pointer-events: none !important;
-}
-
-/* Fix: Forces the inner glass pane to receive clicks cleanly */
-.glass-card {
-  pointer-events: auto !important;
-}
-
-/* Fix: Ensures all interactive control tags take absolute mouse priority */
-button, 
-input, 
-select, 
-label, 
-.toggle-btn, 
-.scroll-nav-arrow-btn, 
-.global-coming-soon-trigger {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-  position: relative;
-  z-index: 999 !important; /* Pulls controls to the very top layer */
-}
-/* Fix: Pushes settings panel to absolute priority layout layer above sidebars */
-.settings-panel {
-  z-index: 9999 !important;
-  position: absolute !important;
-}
-
-/* Fix: Lowers sidebar container priorities slightly so overlays stay on top */
-.user-list-sidebar {
-  position: relative;
-  z-index: 1 !important;
-}
-
-/* Explicitly increases close button hover area priority box */
-.close-btn {
-  z-index: 10005 !important;
-  pointer-events: auto !important;
-  cursor: pointer !important;
 }
