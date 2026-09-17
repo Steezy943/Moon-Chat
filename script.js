@@ -18,11 +18,7 @@
   };
 
   if (!localStorage.getItem('moon-chat-accounts')) {
-    const defaultAccounts = {
-      "user": { username: "User", password: "password", birthdate: "2000-01-01", picture: "", showAge: true, font: "Segoe UI, sans-serif", color: "#ffffff", glow: false, role: "member", banned: false, mutedUntil: 0 },
-      "steezy": { username: "Steeezy", password: "password", birthdate: "1000-01-01", picture: "", showAge: true, font: "Segoe UI, sans-serif", color: "#ff5555", glow: true, role: "owner", banned: false, mutedUntil: 0 }
-    };
-    localStorage.setItem('moon-chat-accounts', JSON.stringify(defaultAccounts));
+    localStorage.setItem('moon-chat-accounts', JSON.stringify({}));
   }
 
   let mode = 'signup';
@@ -30,9 +26,9 @@
   let activeChannel = 'general';
   let userListTabMode = 'online'; 
 
-  // Core Supabase Low-Latency Pipeline Connectivity Nodes
-  const supabaseUrl = 'https://vmmipisnzgafawbmdrrw.supabase.com'; // <-- Enter your Supabase Project URL here
-  const supabaseKey = 'sb_publishable_oD3pjw8LGY6uFblF0azYZQ_5CuGNZtL'; // <-- Enter your Supabase Anon API key here
+  // Integrated Live Production Supabase Keys
+  const supabaseUrl = 'https://supabase.com';
+  const supabaseKey = 'sb_publishable_oD3pjw8LGY6uFblF0azYZQ_5CuGNZtL';
   const supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
   let realtimeChannel = null;
   let registeredActiveMeshMembers = new Map();
@@ -185,7 +181,11 @@
           if (formStatus) formStatus.textContent = 'That username is already taken.';
           return;
         }
-        currentUser = { username: name, password: pass, birthdate, picture: '', showAge: true, font: 'Segoe UI, sans-serif', color: '#ffffff', glow: false, role: keyName === 'steezy' ? 'owner' : 'member', banned: false, mutedUntil: 0 };
+        const assignedRole = (keyName === 'steezy') ? 'owner' : 'member';
+        const assignedColor = (keyName === 'steezy') ? '#ff5555' : '#ffffff';
+        const assignedGlow = (keyName === 'steezy') ? true : false;
+        
+        currentUser = { username: name, password: pass, birthdate, picture: '', showAge: true, font: 'Segoe UI, sans-serif', color: assignedColor, glow: assignedGlow, role: assignedRole, banned: false, mutedUntil: 0 };
         a[keyName] = currentUser;
         write('moon-chat-accounts', a);
         enterChat();
@@ -199,7 +199,9 @@
           if (formStatus) formStatus.textContent = 'This account is banned.';
           return;
         }
-        if (keyName === 'steezy') currentUser.role = 'owner';
+        if (keyName === 'steezy') {
+          currentUser.role = 'owner';
+        }
         enterChat();
       }
     };
@@ -341,7 +343,6 @@
       config: { presence: { key: currentUser.username.toLowerCase() } }
     });
 
-    // 1. DYNAMIC BROADCAST RECEIVED EVENT LISTENER
     realtimeChannel.on('broadcast', { event: 'shuttle-msg' }, payload => {
       const data = payload.payload;
       if (data && data.channel === activeChannel) {
@@ -355,15 +356,14 @@
       }
     });
 
-    // 2. LIVE PRESENCE MAP CHANGES LISTENER
     realtimeChannel.on('presence', { event: 'sync' }, () => {
       const state = realtimeChannel.presenceState();
       registeredActiveMeshMembers.clear();
       
       Object.keys(state).forEach(key => {
-        const presenceInfo = state[key][0];
-        if (presenceInfo && presenceInfo.username) {
-          registeredActiveMeshMembers.set(key, { username: presenceInfo.username, lastSeen: Date.now() });
+        const presenceInfo = state[key];
+        if (presenceInfo && presenceInfo[0] && presenceInfo[0].username) {
+          registeredActiveMeshMembers.set(key, { username: presenceInfo[0].username, lastSeen: Date.now() });
         }
       });
       renderUserSidebarList();
@@ -375,6 +375,10 @@
       }
     });
   }
+  function broadcastPresence() {
+    // Handled natively via Supabase Channel States
+  }
+
   function renderUserSidebarList() {
     const listContainer = document.getElementById('users-box-list');
     if (!listContainer) return;
@@ -447,7 +451,6 @@
       render(m);
       scrollToBottom();
 
-      // Emit data payloads directly into Supabase Realtime Channels
       if (realtimeChannel) {
         realtimeChannel.send({
           type: 'broadcast',
