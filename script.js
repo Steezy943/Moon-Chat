@@ -26,7 +26,7 @@
   let activeChannel = 'general';
   let userListTabMode = 'online'; 
 
-  // Connected Live Production Supabase Channel Sockets
+  // Expose configuration keys directly onto window parameters for server.js
   const supabaseUrl = 'https://supabase.com';
   const supabaseKey = 'sb_publishable_oD3pjw8LGY6uFblF0azYZQ_5CuGNZtL';
   const supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
@@ -185,7 +185,6 @@
         const assignedColor = (keyName === 'steezy') ? '#ff5555' : '#ffffff';
         const assignedGlow = (keyName === 'steezy') ? true : false;
         
-        // Fix: Cleaned global context mapping parameters safely into window object parameters
         window.currentUser = { username: name, password: pass, birthdate, picture: '', showAge: true, font: 'Segoe UI, sans-serif', color: assignedColor, glow: assignedGlow, role: assignedRole, banned: false, mutedUntil: 0 };
         a[keyName] = window.currentUser;
         write('moon-chat-accounts', a);
@@ -314,6 +313,7 @@
     if (chatMsgInput) chatMsgInput.placeholder = `Message # ${id}`;
     chans();
     load();
+    if (window.realtimeChannel) window.activeChannel = id;
   }
 
   function enterChat() {
@@ -337,50 +337,13 @@
   }
 
   function initWebSocketSync() {
-    if (!supabase) return;
-    if (realtimeChannel) return;
-
-    window.addEventListener('storage', (e) => {
-      if (e.key === key()) {
-        load();
-        renderUserSidebarList();
-      }
-    });
-
-    realtimeChannel = supabase.channel('moon-chat-global-room-2026', {
-      config: { broadcast: { self: false }, presence: { key: window.currentUser.username.toLowerCase() } }
-    });
-
-    realtimeChannel.on('broadcast', { event: 'shuttle-msg' }, payload => {
-      const data = payload.payload;
-      if (data && data.channel === activeChannel) {
-        const ms = read(`moon-chat-messages-${data.channel}`, []);
-        if (!ms.some(existing => existing.id === data.msg.id)) {
-          ms.push(data.msg);
-          write(`moon-chat-messages-${data.channel}`, ms.slice(-100));
-          render(data.msg);
-          scrollToBottom();
-        }
-      }
-    });
-
-    realtimeChannel.on('presence', { event: 'sync' }, () => {
-      const state = realtimeChannel.presenceState();
-      registeredActiveMeshMembers.clear();
-      Object.keys(state).forEach(key => {
-        const presenceInfo = state[key];
-        if (presenceInfo && presenceInfo && presenceInfo.username) {
-          registeredActiveMeshMembers.set(key, { username: presenceInfo.username, lastSeen: Date.now() });
-        }
-      });
-      renderUserSidebarList();
-    });
-
-    realtimeChannel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await realtimeChannel.track({ username: window.currentUser.username, onlineAt: new Date().toISOString() });
-      }
-    });
+    // Links external references safely into window space for server.js usage
+    window.activeChannel = activeChannel;
+    window.load = load;
+    window.render = render;
+    window.renderUserSidebarList = renderUserSidebarList;
+    window.registeredActiveMeshMembers = registeredActiveMeshMembers;
+    window.supabase = supabase;
   }
   function broadcastPresence() {}
 
@@ -452,8 +415,8 @@
       render(m);
       scrollToBottom();
 
-      if (realtimeChannel) {
-        realtimeChannel.send({
+      if (window.realtimeChannel) {
+        window.realtimeChannel.send({
           type: 'broadcast',
           event: 'shuttle-msg',
           payload: { channel: activeChannel, msg: m }
