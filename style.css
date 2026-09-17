@@ -103,12 +103,20 @@ button {
 /* ==========================================================================
    5. SLIM FORMS AND DIRECTIONAL NAV ENGINE
    ========================================================================== */
+/* Fix: Ensures the container vanishes completely when .active is stripped away */
 .form-step.auth-container-wrapper {
   position: relative;
   width: 100%;
   height: 100%;
-  display: flex !important;
+  display: none !important; /* Forces a hidden default state */
 }
+
+/* Fix: Only loads the flex layout properties when explicitly flagged by Javascript */
+.form-step.auth-container-wrapper.active {
+  display: flex !important; 
+  flex-direction: column;
+}
+
 
 .auth-card {
   width: 100%;
