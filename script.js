@@ -22,7 +22,7 @@
   }
 
   let mode = 'signup';
-  let currentUser = null;
+ window.currentUser
   let activeChannel = 'general';
   let userListTabMode = 'online'; 
 
