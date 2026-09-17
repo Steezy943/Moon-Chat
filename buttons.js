@@ -7,14 +7,34 @@
     const loginTab = $('toggle-login');
     const signupTab = $('toggle-signup');
     
+    // Fix: Dynamic view switcher handles tab toggles instantly and flawlessly
     if (loginTab && signupTab) {
-      loginTab.addEventListener('click', (e) => {
+      loginTab.onclick = (e) => {
         e.preventDefault();
-        if (typeof window.setMode === 'function') window.setMode('login');
-      });
-      signupTab.addEventListener('click', (e) => {
+        e.stopPropagation();
+        loginTab.classList.add('active');
+        signupTab.classList.remove('active');
+        if (typeof window.setMode === 'function') {
+          window.setMode('login');
+        }
+      };
+
+      signupTab.onclick = (e) => {
         e.preventDefault();
-        if (typeof window.setMode === 'function') window.setMode('signup');
+        e.stopPropagation();
+        signupTab.classList.add('active');
+        loginTab.classList.remove('active');
+        if (typeof window.setMode === 'function') {
+          window.setMode('signup');
+        }
+      };
+    }
+
+    const settingsOpenBtn = $('settings-btn');
+    if (settingsOpenBtn) {
+      settingsOpenBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof window.openSettings === 'function') window.openSettings();
       });
     }
 
