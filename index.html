@@ -57,6 +57,9 @@
            ========================================================================== -->
       <div id="chat-section" class="form-step chat-layout">
         <aside class="channel-sidebar">
+          <!-- Automated 24/7 Sync Feed Trigger Button -->
+          <button id="manual-refresh-chatbox-btn" class="manual-refresh-chatbox-btn" type="button" onclick="if(typeof window.load === 'function') window.load();">🔄 Sync Feed</button>
+          
           <div class="server-title">MOON CHAT <i></i></div>
           <div class="channel-label">TEXT CHANNELS</div>
           <nav id="channel-list"></nav>
