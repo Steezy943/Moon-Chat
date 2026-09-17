@@ -558,6 +558,25 @@
     };
   }
 
-  window.setMode('signup'); 
-  show('auth-section');
+  // --- GUARANTEED DEFAULT INITIALIZATION LAYER ---
+  function forceFreshOnboardingStart() {
+    // Clear out partial temporary session settings
+    currentUser = null;
+    
+    // Explicitly toggle inputs back to registration parameters
+    window.setMode('signup');
+    show('auth-section');
+    
+    // Ensure scroll positions for auth container start completely at the top
+    const authBox = document.getElementById('auth-section');
+    if (authBox) authBox.scrollTop = 0;
+  }
+
+  // Bind execution rules cleanly to both document load and layout states
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', forceFreshOnboardingStart);
+  } else {
+    forceFreshOnboardingStart();
+  }
 })();
+
