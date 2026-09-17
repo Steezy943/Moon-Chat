@@ -1,7 +1,6 @@
 (() => {
   'use strict';
 
-  // Global selector utility completely unlinked from other scripts
   const $ = id => document.getElementById(id);
 
   window.addEventListener('DOMContentLoaded', () => {
@@ -25,10 +24,13 @@
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        
+        // Fix: Targets the active scrollable form wrapper box directly
         const parentId = btn.getAttribute('data-target');
         const container = $(parentId);
+        
         if (container) {
-          const distance = btn.classList.contains('down') ? 180 : -180;
+          const distance = btn.classList.contains('down') ? 220 : -220;
           container.scrollBy({ top: distance, behavior: 'smooth' });
         }
       });
