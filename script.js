@@ -44,7 +44,9 @@
   const show = id => {
     document.querySelectorAll('.form-step').forEach(x => x.classList.remove('active'));
     const targetElement = $(id);
-    if (targetElement) targetElement.classList.add('active');
+    if (targetElement) {
+      targetElement.classList.add('active');
+    }
   };
 
   const img = (el, url) => {
@@ -118,92 +120,138 @@
     mouse.x = e.clientX;
     mouse.y = e.clientY;
     
-    const card = \$('glass-card');
-    if (card && !\$('card-container').matches(':hover')) {
+    const card = document.getElementById('glass-card');
+    if (card && !document.getElementById('card-container').matches(':hover')) {
       const rotateX = -((e.clientY / innerHeight) - 0.5) * 14;
       const rotateY = ((e.clientX / innerWidth) - 0.5) * 14;
       card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
     }
   }, { passive: true });
 
-  \$('card-container').onmouseenter = () => {
-    const card = \$('glass-card');
-    if (card) card.style.transform = 'rotateX(0deg) rotateY(0deg)';
-  };
+  const mainCardContainer = document.getElementById('card-container');
+  if (mainCardContainer) {
+    mainCardContainer.onmouseenter = () => {
+      const card = document.getElementById('glass-card');
+      if (card) card.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    };
+  }
   
   resize();
   animate();
 
   window.setMode = function(m) {
     mode = m;
-    \$('toggle-login').classList.toggle('active', m === 'login');
-    \(('toggle-signup').classList.toggle('active', m === 'signup');\)('auth-title').textContent = m === 'login' ? 'Welcome back' : 'Create an account';
-    \(('submit-btn').textContent = m === 'login' ? 'Login' : 'Create account';\)('birthdate-group').classList.toggle('hidden', m !== 'signup');
-    \(('birthdate').required = m === 'signup';\)('form-status').textContent = '';
+    const loginToggle = document.getElementById('toggle-login');
+    const signupToggle = document.getElementById('toggle-signup');
+    const authTitle = document.getElementById('auth-title');
+    const submitBtn = document.getElementById('submit-btn');
+    const birthdateGroup = document.getElementById('birthdate-group');
+    const birthdateInput = document.getElementById('birthdate');
+    const formStatus = document.getElementById('form-status');
+
+    if (loginToggle) loginToggle.classList.toggle('active', m === 'login');
+    if (signupToggle) signupToggle.classList.toggle('active', m === 'signup');
+    if (authTitle) authTitle.textContent = m === 'login' ? 'Welcome back' : 'Create an account';
+    if (submitBtn) submitBtn.textContent = m === 'login' ? 'Login' : 'Create account';
+    if (birthdateGroup) birthdateGroup.classList.toggle('hidden', m !== 'signup');
+    if (birthdateInput) birthdateInput.required = m === 'signup';
+    if (formStatus) formStatus.textContent = '';
   };
 
-  \$('auth-form').onsubmit = e => {
-    e.preventDefault();
-    const name = \$('username').value.trim(), pass = ('password').value, keyName = name.toLowerCase(), birthdate = ('birthdate').value;
-    if (!name || pass.length < 4 || (mode === 'signup' && !birthdate)) {
-      \$('form-status').textContent = 'Complete the required fields.';
-      return;
-    }
-    const a = read('moon-chat-accounts', {});
-    if (mode === 'signup') {
-      if (a[keyName]) {
-        \$('form-status').textContent = 'That username is already taken.';
-        return;
-      }
-      currentUser = { username: name, password: pass, birthdate, picture: '', showAge: true, role: keyName === 'steezy' ? 'owner' : 'member', banned: false, mutedUntil: 0 };
-      a[keyName] = currentUser;
-      write('moon-chat-accounts', a);
-      \$('username-preview').textContent = name;
-      show('customize-section');
-    } else {
-      currentUser = a[keyName];
-      if (!currentUser || currentUser.password !== pass) {
-        \$('form-status').textContent = 'Incorrect username or password.';
-        return;
-      }
-      if (currentUser.banned) {
-        \$('form-status').textContent = 'This account is banned.';
-        return;
-      }
-      if (keyName === 'steezy') currentUser.role = 'owner';
-      enterChat();
-    }
-  };
+  const authForm = document.getElementById('auth-form');
+  if (authForm) {
+    authForm.onsubmit = e => {
+      e.preventDefault();
+      const usernameInput = document.getElementById('username');
+      const passwordInput = document.getElementById('password');
+      const birthdateInput = document.getElementById('birthdate');
+      const formStatus = document.getElementById('form-status');
 
+      const name = usernameInput ? usernameInput.value.trim() : '';
+      const pass = passwordInput ? passwordInput.value : '';
+      const keyName = name.toLowerCase();
+      const birthdate = birthdateInput ? birthdateInput.value : '';
+
+      if (!name || pass.length < 4 || (mode === 'signup' && !birthdate)) {
+        if (formStatus) formStatus.textContent = 'Complete the required fields.';
+        return;
+      }
+      const a = read('moon-chat-accounts', {});
+      if (mode === 'signup') {
+        if (a[keyName]) {
+          if (formStatus) formStatus.textContent = 'That username is already taken.';
+          return;
+        }
+        currentUser = { username: name, password: pass, birthdate, picture: '', showAge: true, role: keyName === 'steezy' ? 'owner' : 'member', banned: false, mutedUntil: 0 };
+        a[keyName] = currentUser;
+        write('moon-chat-accounts', a);
+        const userPreview = document.getElementById('username-preview');
+        if (userPreview) userPreview.textContent = name;
+        show('customize-section');
+      } else {
+        currentUser = a[keyName];
+        if (!currentUser || currentUser.password !== pass) {
+          if (formStatus) formStatus.textContent = 'Incorrect username or password.';
+          return;
+        }
+        if (currentUser.banned) {
+          if (formStatus) formStatus.textContent = 'This account is banned.';
+          return;
+        }
+        if (keyName === 'steezy') currentUser.role = 'owner';
+        enterChat();
+      }
+    };
+  }
   function preview() {
-    const p = ('username-preview'), c = ('font-color').value;
-    p.style.fontFamily = \$('font-family').value;
-    p.style.color = c;
-    p.style.textShadow = \$('glow-toggle').checked ? `0 0 14px ${c}` : 'none';
-    img(('profile-preview-image'), ('profile-picture').value.trim());
+    const p = document.getElementById('username-preview');
+    const c = document.getElementById('font-color');
+    const f = document.getElementById('font-family');
+    const g = document.getElementById('glow-toggle');
+    const pic = document.getElementById('profile-picture');
+    const previewImg = document.getElementById('profile-preview-image');
+
+    if (p && c && f && g) {
+      p.style.fontFamily = f.value;
+      p.style.color = c.value;
+      p.style.textShadow = g.checked ? `0 0 14px ${c.value}` : 'none';
+    }
+    if (previewImg && pic) {
+      img(previewImg, pic.value.trim());
+    }
   }
 
   ['font-family', 'font-color', 'glow-toggle', 'profile-picture'].forEach(id => {
-    const element = \$(id);
+    const element = document.getElementById(id);
     if (element) element.addEventListener('input', preview);
   });
-  \$('save-profile-btn').onclick = () => {
-    currentUser.picture = \$('profile-picture').value.trim();
-    currentUser.font = \$('font-family').value;
-    currentUser.color = \$('font-color').value;
-    currentUser.glow = \$('glow-toggle').checked;
-    const a = read('moon-chat-accounts', {});
-    a[currentUser.username.toLowerCase()] = currentUser;
-    write('moon-chat-accounts', a);
-    enterChat();
-  };
+
+  const saveProfileBtn = document.getElementById('save-profile-btn');
+  if (saveProfileBtn) {
+    saveProfileBtn.onclick = () => {
+      const pic = document.getElementById('profile-picture');
+      const f = document.getElementById('font-family');
+      const c = document.getElementById('font-color');
+      const g = document.getElementById('glow-toggle');
+
+      currentUser.picture = pic ? pic.value.trim() : '';
+      currentUser.font = f ? f.value : 'Segoe UI, sans-serif';
+      currentUser.color = c ? c.value : '#fff';
+      currentUser.glow = g ? g.checked : false;
+
+      const a = read('moon-chat-accounts', {});
+      a[currentUser.username.toLowerCase()] = currentUser;
+      write('moon-chat-accounts', a);
+      enterChat();
+    };
+  }
 
   function key() {
     return `moon-chat-messages-${activeChannel}`;
   }
 
   function scrollToBottom() {
-    const container = \$('message-container');
+    const container = document.getElementById('message-container');
     if (container) container.scrollTop = container.scrollHeight;
   }
 
@@ -260,131 +308,58 @@
     }
     
     b.append(wrapper);
-    \$('message-container').append(b);
+    const msgContainer = document.getElementById('message-container');
+    if (msgContainer) msgContainer.append(b);
   }
-
   function load() {
-    \$('message-container').replaceChildren();
+    const msgContainer = document.getElementById('message-container');
+    if (msgContainer) msgContainer.replaceChildren();
     read(key(), []).forEach(render);
     scrollToBottom();
   }
 
   function chans() {
-    const l = \$('channel-list');
-    l.replaceChildren();
-    Object.keys(channels).forEach(id => {
-      const b = document.createElement('button');
-      b.className = `channel-btn${id === activeChannel ? ' active' : ''}`;
-      b.textContent = `#  ${id}`;
-      b.onclick = () => select(id);
-      l.append(b);
-    });
-  }
-  \$('save-profile-btn').onclick = () => {
-    currentUser.picture = \$('profile-picture').value.trim();
-    currentUser.font = \$('font-family').value;
-    currentUser.color = \$('font-color').value;
-    currentUser.glow = \$('glow-toggle').checked;
-    const a = read('moon-chat-accounts', {});
-    a[currentUser.username.toLowerCase()] = currentUser;
-    write('moon-chat-accounts', a);
-    enterChat();
-  };
-
-  function key() {
-    return `moon-chat-messages-${activeChannel}`;
-  }
-
-  function scrollToBottom() {
-    const container = \$('message-container');
-    if (container) container.scrollTop = container.scrollHeight;
-  }
-
-  function render(m) {
-    const b = document.createElement('article');
-    b.className = 'msg-block';
-
-    const accounts = read('moon-chat-accounts', {});
-    const authorData = accounts[m.username.toLowerCase()] || {};
-    
-    if (authorData.picture) {
-      const avatarImg = document.createElement('img');
-      avatarImg.className = 'avatar';
-      avatarImg.src = authorData.picture;
-      avatarImg.alt = m.username;
-      b.append(avatarImg);
-    } else {
-      const avatarFallback = document.createElement('span');
-      avatarFallback.className = 'avatar';
-      avatarFallback.textContent = m.username.toUpperCase();
-      b.append(avatarFallback);
-    }
-
-    const wrapper = document.createElement('div');
-    wrapper.className = 'msg-body-wrapper';
-
-    const h = document.createElement('div');
-    h.className = 'msg-head';
-    
-    const n = document.createElement('button');
-    n.className = 'msg-author';
-    n.textContent = m.username;
-    n.onclick = () => openProfile(m.username);
-    
-    const t = document.createElement('time');
-    t.className = 'msg-time';
-    t.textContent = m.time || '';
-    h.append(n, t);
-    
-    const p = document.createElement('p');
-    p.textContent = m.content;
-    wrapper.append(h, p);
-
-    if (currentUser?.role === 'owner' && m.username.toLowerCase() !== 'steezy') {
-      const tools = document.createElement('div');
-      tools.className = 'mod-tools';
-      ['timeout', 'mute', 'ban'].forEach(act => {
-        const x = document.createElement('button');
-        x.textContent = act;
-        x.onclick = () => moderate(act, m.username);
-        tools.append(x);
+    const l = document.getElementById('channel-list');
+    if (l) {
+      l.replaceChildren();
+      Object.keys(channels).forEach(id => {
+        const b = document.createElement('button');
+        b.className = `channel-btn${id === activeChannel ? ' active' : ''}`;
+        b.textContent = `#  ${id}`;
+        b.onclick = () => select(id);
+        l.append(b);
       });
-      wrapper.append(tools);
     }
-    
-    b.append(wrapper);
-    \$('message-container').append(b);
   }
 
-  function load() {
-    \$('message-container').replaceChildren();
-    read(key(), []).forEach(render);
-    scrollToBottom();
-  }
-
-  function chans() {
-    const l = \$('channel-list');
-    l.replaceChildren();
-    Object.keys(channels).forEach(id => {
-      const b = document.createElement('button');
-      b.className = `channel-btn${id === activeChannel ? ' active' : ''}`;
-      b.textContent = `#  ${id}`;
-      b.onclick = () => select(id);
-      l.append(b);
-    });
-  }
   function select(id) {
     activeChannel = id;
-    \$('room-title').textContent = `# ${id}`;
-    \(('channel-topic').textContent = channels[id];\)('chat-msg').placeholder = `Message # ${id}`;
+    const roomTitle = document.getElementById('room-title');
+    const channelTopic = document.getElementById('channel-topic');
+    const chatMsgInput = document.getElementById('chat-msg');
+
+    if (roomTitle) roomTitle.textContent = `# ${id}`;
+    if (channelTopic) channelTopic.textContent = channels[id];
+    if (chatMsgInput) chatMsgInput.placeholder = `Message # ${id}`;
     chans();
     load();
   }
 
   function enterChat() {
-    \$('sidebar-username').textContent = currentUser.username;
-    \(('sidebar-role').textContent = currentUser.role === 'owner' ? 'Owner' : 'Member';\)('user-avatar').textContent = currentUser.username.toUpperCase();
-    img(\(('user-avatar-image'), currentUser.picture);\)('user-role-badge').textContent = currentUser.role.toUpperCase();
+    const sidebarUser = document.getElementById('sidebar-username');
+    const sidebarRole = document.getElementById('sidebar-role');
+    const userAvatar = document.getElementById('user-avatar');
+    const userAvatarImg = document.getElementById('user-avatar-image');
+    const roleBadge = document.getElementById('user-role-badge');
+    const cardContainer = document.getElementById('card-container');
+
+    if (sidebarUser) sidebarUser.textContent = currentUser.username;
+    if (sidebarRole) sidebarRole.textContent = currentUser.role === 'owner' ? 'Owner' : 'Member';
+    if (userAvatar) userAvatar.textContent = currentUser.username.toUpperCase();
+    if (userAvatarImg) img(userAvatarImg, currentUser.picture);
+    if (roleBadge) roleBadge.textContent = currentUser.role.toUpperCase();
+    if (cardContainer) cardContainer.style.maxWidth = '1080px';
+    
     show('chat-section');
     select(activeChannel);
     initWebSocketSync();
@@ -436,7 +411,7 @@
     }
   }
   function renderUserSidebarList() {
-    const listContainer = \$('users-box-list');
+    const listContainer = document.getElementById('users-box-list');
     if (!listContainer) return;
     listContainer.replaceChildren();
 
@@ -487,65 +462,102 @@
     write('moon-chat-accounts', a);
   }
 
-  \$('chat-input-form').onsubmit = e => {
-    e.preventDefault();
-    const i = \$('chat-msg'), c = i.value.trim(), a = read('moon-chat-accounts', {})[currentUser.username.toLowerCase()];
-    if (!c || a?.mutedUntil > Date.now()) return;
-    
-    const m = {
-      username: currentUser.username,
-      content: c,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const chatInputForm = document.getElementById('chat-input-form');
+  if (chatInputForm) {
+    chatInputForm.onsubmit = e => {
+      e.preventDefault();
+      const chatMsgInput = document.getElementById('chat-msg');
+      const c = chatMsgInput ? chatMsgInput.value.trim() : '';
+      const a = read('moon-chat-accounts', {})[currentUser.username.toLowerCase()];
+      if (!c || a?.mutedUntil > Date.now()) return;
+      
+      const m = {
+        username: currentUser.username,
+        content: c,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      
+      const ms = read(key(), []);
+      ms.push(m);
+      write(key(), ms.slice(-100));
+      render(m);
+      scrollToBottom();
+
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'CHAT', channel: activeChannel, msg: m }));
+      }
+      if (chatMsgInput) chatMsgInput.value = '';
     };
-    
-    const ms = read(key(), []);
-    ms.push(m);
-    write(key(), ms.slice(-100));
-    render(m);
-    scrollToBottom();
+  }
 
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: 'CHAT', channel: activeChannel, msg: m }));
-    }
-    i.value = '';
-  };
-
-  function openSettings() {
+  window.openSettings = function() {
     const u = currentUser || {};
-    \(('settings-picture').value = u.picture \vert{}\vert{} '';\)('settings-display-name').value = u.username || '';
-    \(('settings-age').value = u.age \vert{}\vert{} '';\)('settings-show-age').checked = u.showAge !== false;
-    \(('settings-font').value = u.font \vert{}\vert{} 'Segoe UI, sans-serif';\)('settings-color').value = u.color || '#fff';
-    \$('settings-glow').checked = !!u.glow;
-    \$('settings-panel').classList.remove('hidden');
-  }
+    const setPic = document.getElementById('settings-picture');
+    const setDisp = document.getElementById('settings-display-name');
+    const setAge = document.getElementById('settings-age');
+    const setShowAge = document.getElementById('settings-show-age');
+    const setFont = document.getElementById('settings-font');
+    const setColor = document.getElementById('settings-color');
+    const setGlow = document.getElementById('settings-glow');
+    const setPanel = document.getElementById('settings-panel');
 
-  function openProfile(name) {
-    const u = read('moon-chat-accounts', {})[name.toLowerCase()] || {};
-    \$('popup-name').textContent = u.username || name;
-    \$('popup-account').textContent = `Account: ${u.username || name}`;
-    img(\(('popup-picture'), u.picture);\)('popup-age').textContent = u.showAge !== false && u.age ? `Age: ${u.age}` : 'Age hidden';
-    \$('profile-popup').classList.remove('hidden');
-  }
-
-  \$('settings-btn').onclick = openSettings;
-  \$('account-button').onclick = () => openProfile(currentUser.username);
-
-  \$('save-settings').onclick = () => {
-    const old = currentUser.username, keyName = old.toLowerCase(), a = read('moon-chat-accounts', {});
-    currentUser.username = \$('settings-display-name').value.trim() || old;
-    currentUser.picture = \$('settings-picture').value.trim();
-    currentUser.age = \$('settings-age').value;
-    currentUser.showAge = \$('settings-show-age').checked;
-    currentUser.font = \$('settings-font').value;
-    currentUser.color = \$('settings-color').value;
-    currentUser.glow = \$('settings-glow').checked;
-    delete a[keyName];
-    a[currentUser.username.toLowerCase()] = currentUser;
-    write('moon-chat-accounts', a);
-    enterChat();
-    \$('settings-panel').classList.add('hidden');
+    if (setPic) setPic.value = u.picture || '';
+    if (setDisp) setDisp.value = u.username || '';
+    if (setAge) setAge.value = u.age || '';
+    if (setShowAge) setShowAge.checked = u.showAge !== false;
+    if (setFont) setFont.value = u.font || 'Segoe UI, sans-serif';
+    if (setColor) setColor.value = u.color || '#fff';
+    if (setGlow) setGlow.checked = !!u.glow;
+    if (setPanel) setPanel.classList.remove('hidden');
   };
 
-  setMode('login');
+  window.openProfile = function(name) {
+    const u = read('moon-chat-accounts', {})[name.toLowerCase()] || {};
+    const popName = document.getElementById('popup-name');
+    const popAcc = document.getElementById('popup-account');
+    const popPic = document.getElementById('popup-picture');
+    const popAge = document.getElementById('popup-age');
+    const popPopup = document.getElementById('profile-popup');
+
+    if (popName) popName.textContent = u.username || name;
+    if (popAcc) popAcc.textContent = `Account: ${u.username || name}`;
+    if (popPic) img(popPic, u.picture);
+    if (popAge) popAge.textContent = u.showAge !== false && u.age ? `Age: ${u.age}` : 'Age hidden';
+    if (popPopup) popPopup.classList.remove('hidden');
+  };
+
+  const saveSettingsBtn = document.getElementById('save-settings');
+  if (saveSettingsBtn) {
+    saveSettingsBtn.onclick = () => {
+      const setDisp = document.getElementById('settings-display-name');
+      const setPic = document.getElementById('settings-picture');
+      const setAge = document.getElementById('settings-age');
+      const setShowAge = document.getElementById('settings-show-age');
+      const setFont = document.getElementById('settings-font');
+      const setColor = document.getElementById('settings-color');
+      const setGlow = document.getElementById('settings-glow');
+
+      const old = currentUser.username;
+      const keyName = old.toLowerCase();
+      const a = read('moon-chat-accounts', {});
+
+      currentUser.username = setDisp && setDisp.value.trim() ? setDisp.value.trim() : old;
+      currentUser.picture = setPic ? setPic.value.trim() : '';
+      currentUser.age = setAge ? setAge.value : '';
+      currentUser.showAge = setShowAge ? setShowAge.checked : true;
+      currentUser.font = setFont ? setFont.value : 'Segoe UI, sans-serif';
+      currentUser.color = setColor ? setColor.value : '#fff';
+      currentUser.glow = setGlow ? setGlow.checked : false;
+
+      delete a[keyName];
+      a[currentUser.username.toLowerCase()] = currentUser;
+      write('moon-chat-accounts', a);
+      enterChat();
+      const setPanel = document.getElementById('settings-panel');
+      if (setPanel) setPanel.classList.add('hidden');
+    };
+  }
+
+  window.setMode('login');
   show('auth-section');
 })();
