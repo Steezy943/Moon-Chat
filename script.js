@@ -30,8 +30,11 @@
   let activeChannel = 'general';
   let userListTabMode = 'online'; 
 
-  let socket = null;
-  let heartLoop = null;
+  // Core Supabase Low-Latency Pipeline Connectivity Nodes
+  const supabaseUrl = 'https://vmmipisnzgafawbmdrrw.supabase.com'; // <-- Enter your Supabase Project URL here
+  const supabaseKey = 'sb_publishable_oD3pjw8LGY6uFblF0azYZQ_5CuGNZtL'; // <-- Enter your Supabase Anon API key here
+  const supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
+  let realtimeChannel = null;
   let registeredActiveMeshMembers = new Map();
 
   const channels = {
@@ -328,60 +331,58 @@
   }
 
   function initWebSocketSync() {
-    if (socket) return;
-    socket = new WebSocket('wss://api.spacekit.io/v1/ws?room=moon-chat-2026-global');
-
-    socket.onopen = () => {
-      broadcastPresence();
-      heartLoop = setInterval(broadcastPresence, 10000);
-    };
-
-    socket.onmessage = e => {
-      try {
-        const data = JSON.parse(e.data);
-        if (!data || !data.type) return;
-
-        if (data.type === 'PING') {
-          registeredActiveMeshMembers.set(data.username.toLowerCase(), { username: data.username, lastSeen: Date.now() });
-          renderUserSidebarList();
-        }
-
-        if (data.type === 'CHAT' && data.channel === activeChannel) {
-          const ms = read(`moon-chat-messages-${data.channel}`, []);
-          if (!ms.some(existing => existing.id === data.msg.id)) {
-            ms.push(data.msg);
-            write(`moon-chat-messages-${data.channel}`, ms.slice(-100));
-            render(data.msg);
-            scrollToBottom();
-          }
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    socket.onclose = () => {
-      clearInterval(heartLoop);
-      socket = null;
-      setTimeout(initWebSocketSync, 3000);
-    };
-  }
-
-  function broadcastPresence() {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: 'PING', username: currentUser.username }));
+    if (!supabase) {
+      console.error("Supabase script node missing from HTML layout frame.");
+      return;
     }
-  }
+    if (realtimeChannel) return;
 
+    realtimeChannel = supabase.channel('moon-chat-global-room-2026', {
+      config: { presence: { key: currentUser.username.toLowerCase() } }
+    });
+
+    // 1. DYNAMIC BROADCAST RECEIVED EVENT LISTENER
+    realtimeChannel.on('broadcast', { event: 'shuttle-msg' }, payload => {
+      const data = payload.payload;
+      if (data && data.channel === activeChannel) {
+        const ms = read(`moon-chat-messages-${data.channel}`, []);
+        if (!ms.some(existing => existing.id === data.msg.id)) {
+          ms.push(data.msg);
+          write(`moon-chat-messages-${data.channel}`, ms.slice(-100));
+          render(data.msg);
+          scrollToBottom();
+        }
+      }
+    });
+
+    // 2. LIVE PRESENCE MAP CHANGES LISTENER
+    realtimeChannel.on('presence', { event: 'sync' }, () => {
+      const state = realtimeChannel.presenceState();
+      registeredActiveMeshMembers.clear();
+      
+      Object.keys(state).forEach(key => {
+        const presenceInfo = state[key][0];
+        if (presenceInfo && presenceInfo.username) {
+          registeredActiveMeshMembers.set(key, { username: presenceInfo.username, lastSeen: Date.now() });
+        }
+      });
+      renderUserSidebarList();
+    });
+
+    realtimeChannel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await realtimeChannel.track({ username: currentUser.username, onlineAt: new Date().toISOString() });
+      }
+    });
+  }
   function renderUserSidebarList() {
     const listContainer = document.getElementById('users-box-list');
     if (!listContainer) return;
     listContainer.replaceChildren();
 
     const accounts = read('moon-chat-accounts', {});
-    const now = Date.now();
-
     registeredActiveMeshMembers.forEach((val, key) => {
-      if (now - val.lastSeen > 25000) registeredActiveMeshMembers.delete(key);
+      if (Date.now() - val.lastSeen > 25000) registeredActiveMeshMembers.delete(key);
     });
 
     Object.keys(accounts).forEach(keyName => {
@@ -446,8 +447,13 @@
       render(m);
       scrollToBottom();
 
-      if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ type: 'CHAT', channel: activeChannel, msg: m }));
+      // Emit data payloads directly into Supabase Realtime Channels
+      if (realtimeChannel) {
+        realtimeChannel.send({
+          type: 'broadcast',
+          event: 'shuttle-msg',
+          payload: { channel: activeChannel, msg: m }
+        });
       }
       if (chatMsgInput) chatMsgInput.value = '';
     };
