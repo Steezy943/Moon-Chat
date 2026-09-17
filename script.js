@@ -340,8 +340,11 @@
 
     window.addEventListener('storage', (e) => {
       if (e.key === key()) {
-        load();
-        renderUserSidebarList();
+        const currentCount = document.getElementById('message-container')?.children.length || 0;
+        const latestData = read(key(), []);
+        if (latestData.length > currentCount) {
+          load();
+        }
       }
     });
 
@@ -365,10 +368,10 @@
     realtimeChannel.on('presence', { event: 'sync' }, () => {
       const state = realtimeChannel.presenceState();
       registeredActiveMeshMembers.clear();
-      Object.keys(state).forEach(key => {
-        const presenceInfo = state[key];
-        if (presenceInfo && presenceInfo && presenceInfo.username) {
-          registeredActiveMeshMembers.set(key, { username: presenceInfo.username, lastSeen: Date.now() });
+      Object.keys(state).forEach(k => {
+        const presenceInfo = state[k];
+        if (presenceInfo && presenceInfo.username) {
+          registeredActiveMeshMembers.set(k, { username: presenceInfo.username, lastSeen: Date.now() });
         }
       });
       renderUserSidebarList();
@@ -380,14 +383,17 @@
       }
     });
 
-    // Fix: 24/7 background refresh loop built directly into the private file scope.
-    // It silently checks local data arrays and appends new text rows every second.
+    // Background safety poll that checks for incoming changes every second without losing focus
     setInterval(() => {
       if (currentUser) {
+        const container = document.getElementById('message-container');
+        const currentCount = container ? container.children.length : 0;
         const cachedMessages = read(key(), []);
-        cachedMessages.forEach(msg => {
-          render(msg);
-        });
+        
+        if (cachedMessages.length > currentCount) {
+          cachedMessages.forEach(msg => render(msg));
+          scrollToBottom();
+        }
         renderUserSidebarList();
       }
     }, 1000);
