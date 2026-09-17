@@ -702,3 +702,29 @@ h1 {
     display: none;
   }
 }
+/* ==========================================================================
+   9. INTERACTION PRIORITY OVERRIDES (POINTER FIX)
+   ========================================================================== */
+/* Fix: Forces the card container to step out of the way of mouse actions */
+.card-container {
+  pointer-events: none !important;
+}
+
+/* Fix: Forces the inner glass pane to receive clicks cleanly */
+.glass-card {
+  pointer-events: auto !important;
+}
+
+/* Fix: Ensures all interactive control tags take absolute mouse priority */
+button, 
+input, 
+select, 
+label, 
+.toggle-btn, 
+.scroll-nav-arrow-btn, 
+.global-coming-soon-trigger {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  position: relative;
+  z-index: 999 !important; /* Pulls controls to the very top layer */
+}
