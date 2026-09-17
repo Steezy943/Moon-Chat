@@ -182,7 +182,6 @@
           if (formStatus) formStatus.textContent = 'That username is already taken.';
           return;
         }
-        // Direct default parameters upon onboarding selection bypass
         currentUser = { username: name, password: pass, birthdate, picture: '', showAge: true, font: 'Segoe UI, sans-serif', color: '#ffffff', glow: false, role: keyName === 'steezy' ? 'owner' : 'member', banned: false, mutedUntil: 0 };
         a[keyName] = currentUser;
         write('moon-chat-accounts', a);
@@ -241,7 +240,6 @@
     n.className = 'msg-author';
     n.textContent = m.username;
     
-    // Inject user fonts, colors, and shadows directly out of settings configuration keys
     if (authorData.font) n.style.fontFamily = authorData.font;
     if (authorData.color) n.style.color = authorData.color;
     if (authorData.glow && authorData.color) {
@@ -522,17 +520,27 @@
     };
   }
 
-  \$('tab-online-btn').onclick = () => {
-    userListTabMode = 'online';
-    \(('tab-online-btn').classList.add('active');\)('tab-offline-btn').classList.remove('active');
-    renderUserSidebarList();
-  };
+  const tabOnlineBtn = document.getElementById('tab-online-btn');
+  if (tabOnlineBtn) {
+    tabOnlineBtn.onclick = () => {
+      userListTabMode = 'online';
+      tabOnlineBtn.classList.add('active');
+      const tabOfflineBtn = document.getElementById('tab-offline-btn');
+      if (tabOfflineBtn) tabOfflineBtn.classList.remove('active');
+      renderUserSidebarList();
+    };
+  }
   
-  \$('tab-offline-btn').onclick = () => {
-    userListTabMode = 'offline';
-    \(('tab-offline-btn').classList.add('active');\)('tab-online-btn').classList.remove('active');
-    renderUserSidebarList();
-  };
+  const tabOfflineBtn = document.getElementById('tab-offline-btn');
+  if (tabOfflineBtn) {
+    tabOfflineBtn.onclick = () => {
+      userListTabMode = 'offline';
+      tabOfflineBtn.classList.add('active');
+      const tabOnlineBtn = document.getElementById('tab-online-btn');
+      if (tabOnlineBtn) tabOnlineBtn.classList.remove('active');
+      renderUserSidebarList();
+    };
+  }
 
   function forceFreshOnboardingStart() {
     currentUser = null;
