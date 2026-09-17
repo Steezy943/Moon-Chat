@@ -728,3 +728,21 @@ label,
   position: relative;
   z-index: 999 !important; /* Pulls controls to the very top layer */
 }
+/* Fix: Pushes settings panel to absolute priority layout layer above sidebars */
+.settings-panel {
+  z-index: 9999 !important;
+  position: absolute !important;
+}
+
+/* Fix: Lowers sidebar container priorities slightly so overlays stay on top */
+.user-list-sidebar {
+  position: relative;
+  z-index: 1 !important;
+}
+
+/* Explicitly increases close button hover area priority box */
+.close-btn {
+  z-index: 10005 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
