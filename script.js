@@ -206,9 +206,11 @@
       }
     };
   }
+  // Change this section inside script.js so server.js can see the keys:
   function key() {
     return `moon-chat-messages-${activeChannel}`;
   }
+  window.key = key; // Exposes key utility out to window mapping nodes
 
   function scrollToBottom() {
     const container = document.getElementById('message-container');
