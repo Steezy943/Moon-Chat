@@ -19,13 +19,13 @@
 
   if (!localStorage.getItem('moon-chat-accounts')) {
     const defaultAccounts = {
-      "user": { username: "User", password: "password", birthdate: "2000-01-01", picture: "", showAge: true, role: "member", banned: false, mutedUntil: 0 },
-      "steezy": { username: "Steeezy", password: "password", birthdate: "1000-01-01", picture: "", showAge: true, role: "owner", banned: false, mutedUntil: 0 }
+      "user": { username: "User", password: "password", birthdate: "2000-01-01", picture: "", showAge: true, font: "Segoe UI, sans-serif", color: "#ffffff", glow: false, role: "member", banned: false, mutedUntil: 0 },
+      "steezy": { username: "Steeezy", password: "password", birthdate: "1000-01-01", picture: "", showAge: true, font: "Segoe UI, sans-serif", color: "#ff5555", glow: true, role: "owner", banned: false, mutedUntil: 0 }
     };
     localStorage.setItem('moon-chat-accounts', JSON.stringify(defaultAccounts));
   }
 
-  let mode = 'login';
+  let mode = 'signup';
   let currentUser = null;
   let activeChannel = 'general';
   let userListTabMode = 'online'; 
@@ -151,7 +151,7 @@
 
     if (loginToggle) loginToggle.classList.toggle('active', m === 'login');
     if (signupToggle) signupToggle.classList.toggle('active', m === 'signup');
-    if (authTitle) authTitle.textContent = m === 'login' ? 'Welcome back' : 'Create an account';
+    if (authTitle) authTitle.textContent = m === 'login' ? 'Welcome back' : 'Create account';
     if (submitBtn) submitBtn.textContent = m === 'login' ? 'Login' : 'Create account';
     if (birthdateGroup) birthdateGroup.classList.toggle('hidden', m !== 'signup');
     if (birthdateInput) birthdateInput.required = m === 'signup';
@@ -182,12 +182,11 @@
           if (formStatus) formStatus.textContent = 'That username is already taken.';
           return;
         }
-        currentUser = { username: name, password: pass, birthdate, picture: '', showAge: true, role: keyName === 'steezy' ? 'owner' : 'member', banned: false, mutedUntil: 0 };
+        // Direct default parameters upon onboarding selection bypass
+        currentUser = { username: name, password: pass, birthdate, picture: '', showAge: true, font: 'Segoe UI, sans-serif', color: '#ffffff', glow: false, role: keyName === 'steezy' ? 'owner' : 'member', banned: false, mutedUntil: 0 };
         a[keyName] = currentUser;
         write('moon-chat-accounts', a);
-        const userPreview = document.getElementById('username-preview');
-        if (userPreview) userPreview.textContent = name;
-        show('customize-section');
+        enterChat();
       } else {
         currentUser = a[keyName];
         if (!currentUser || currentUser.password !== pass) {
@@ -203,49 +202,6 @@
       }
     };
   }
-  function preview() {
-    const p = document.getElementById('username-preview');
-    const c = document.getElementById('font-color');
-    const f = document.getElementById('font-family');
-    const g = document.getElementById('glow-toggle');
-    const pic = document.getElementById('profile-picture');
-    const previewImg = document.getElementById('profile-preview-image');
-
-    if (p && c && f && g) {
-      p.style.fontFamily = f.value;
-      p.style.color = c.value;
-      p.style.textShadow = g.checked ? `0 0 14px ${c.value}` : 'none';
-    }
-    if (previewImg && pic) {
-      img(previewImg, pic.value.trim());
-    }
-  }
-
-  ['font-family', 'font-color', 'glow-toggle', 'profile-picture'].forEach(id => {
-    const element = document.getElementById(id);
-    if (element) element.addEventListener('input', preview);
-  });
-
-  const saveProfileBtn = document.getElementById('save-profile-btn');
-  if (saveProfileBtn) {
-    saveProfileBtn.onclick = () => {
-      const pic = document.getElementById('profile-picture');
-      const f = document.getElementById('font-family');
-      const c = document.getElementById('font-color');
-      const g = document.getElementById('glow-toggle');
-
-      currentUser.picture = pic ? pic.value.trim() : '';
-      currentUser.font = f ? f.value : 'Segoe UI, sans-serif';
-      currentUser.color = c ? c.value : '#fff';
-      currentUser.glow = g ? g.checked : false;
-
-      const a = read('moon-chat-accounts', {});
-      a[currentUser.username.toLowerCase()] = currentUser;
-      write('moon-chat-accounts', a);
-      enterChat();
-    };
-  }
-
   function key() {
     return `moon-chat-messages-${activeChannel}`;
   }
@@ -271,7 +227,7 @@
     } else {
       const avatarFallback = document.createElement('span');
       avatarFallback.className = 'avatar';
-      avatarFallback.textContent = m.username.toUpperCase();
+      avatarFallback.textContent = m.username.toUpperCase().charAt(0);
       b.append(avatarFallback);
     }
 
@@ -284,6 +240,14 @@
     const n = document.createElement('button');
     n.className = 'msg-author';
     n.textContent = m.username;
+    
+    // Inject user fonts, colors, and shadows directly out of settings configuration keys
+    if (authorData.font) n.style.fontFamily = authorData.font;
+    if (authorData.color) n.style.color = authorData.color;
+    if (authorData.glow && authorData.color) {
+      n.style.textShadow = `0 0 10px ${authorData.color}`;
+    }
+    
     n.onclick = () => openProfile(m.username);
     
     const t = document.createElement('time');
@@ -311,13 +275,13 @@
     const msgContainer = document.getElementById('message-container');
     if (msgContainer) msgContainer.append(b);
   }
+
   function load() {
     const msgContainer = document.getElementById('message-container');
     if (msgContainer) msgContainer.replaceChildren();
     read(key(), []).forEach(render);
     scrollToBottom();
   }
-
   function chans() {
     const l = document.getElementById('channel-list');
     if (l) {
@@ -355,10 +319,10 @@
 
     if (sidebarUser) sidebarUser.textContent = currentUser.username;
     if (sidebarRole) sidebarRole.textContent = currentUser.role === 'owner' ? 'Owner' : 'Member';
-    if (userAvatar) userAvatar.textContent = currentUser.username.toUpperCase();
+    if (userAvatar) userAvatar.textContent = currentUser.username.toUpperCase().charAt(0);
     if (userAvatarImg) img(userAvatarImg, currentUser.picture);
     if (roleBadge) roleBadge.textContent = currentUser.role.toUpperCase();
-    if (cardContainer) cardContainer.style.maxWidth = '1080px';
+    if (cardContainer) cardContainer.style.maxWidth = '1140px';
     
     show('chat-section');
     select(activeChannel);
@@ -397,7 +361,6 @@
         console.error(err);
       }
     };
-
     socket.onclose = () => {
       clearInterval(heartLoop);
       socket = null;
@@ -410,6 +373,7 @@
       socket.send(JSON.stringify({ type: 'PING', username: currentUser.username }));
     }
   }
+
   function renderUserSidebarList() {
     const listContainer = document.getElementById('users-box-list');
     if (!listContainer) return;
@@ -440,7 +404,7 @@
       } else {
         const fallback = document.createElement('span');
         fallback.className = 'avatar';
-        fallback.textContent = account.username.toUpperCase();
+        fallback.textContent = account.username.toUpperCase().charAt(0);
         row.append(fallback);
       }
 
@@ -558,25 +522,29 @@
     };
   }
 
-  // --- GUARANTEED DEFAULT INITIALIZATION LAYER ---
+  \$('tab-online-btn').onclick = () => {
+    userListTabMode = 'online';
+    \(('tab-online-btn').classList.add('active');\)('tab-offline-btn').classList.remove('active');
+    renderUserSidebarList();
+  };
+  
+  \$('tab-offline-btn').onclick = () => {
+    userListTabMode = 'offline';
+    \(('tab-offline-btn').classList.add('active');\)('tab-online-btn').classList.remove('active');
+    renderUserSidebarList();
+  };
+
   function forceFreshOnboardingStart() {
-    // Clear out partial temporary session settings
     currentUser = null;
-    
-    // Explicitly toggle inputs back to registration parameters
     window.setMode('signup');
     show('auth-section');
-    
-    // Ensure scroll positions for auth container start completely at the top
     const authBox = document.getElementById('auth-section');
     if (authBox) authBox.scrollTop = 0;
   }
 
-  // Bind execution rules cleanly to both document load and layout states
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', forceFreshOnboardingStart);
   } else {
     forceFreshOnboardingStart();
   }
 })();
-
