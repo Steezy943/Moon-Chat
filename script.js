@@ -216,8 +216,12 @@
   }
 
   function render(m) {
+    // Fix: Prevent rendering a message if it's already visible in the DOM
+    if (document.getElementById(`msg-${m.id}`)) return;
+
     const b = document.createElement('article');
     b.className = 'msg-block';
+    b.id = `msg-${m.id}`; // Fixed Anchor tag to match ID elements exactly
 
     const accounts = read('moon-chat-accounts', {});
     const authorData = accounts[m.username.toLowerCase()] || {};
@@ -350,7 +354,7 @@
         if (!ms.some(existing => existing.id === data.msg.id)) {
           ms.push(data.msg);
           write(`moon-chat-messages-${data.channel}`, ms.slice(-100));
-          render(data.msg);
+          render(data.msg); // Incremental render: safely appends message instantly to bottom
           scrollToBottom();
         }
       }
@@ -359,11 +363,10 @@
     realtimeChannel.on('presence', { event: 'sync' }, () => {
       const state = realtimeChannel.presenceState();
       registeredActiveMeshMembers.clear();
-      
       Object.keys(state).forEach(key => {
         const presenceInfo = state[key];
-        if (presenceInfo && presenceInfo && presenceInfo.username) {
-          registeredActiveMeshMembers.set(key, { username: presenceInfo.username, lastSeen: Date.now() });
+        if (presenceInfo && presenceInfo[0] && presenceInfo[0].username) {
+          registeredActiveMeshMembers.set(key, { username: presenceInfo[0].username, lastSeen: Date.now() });
         }
       });
       renderUserSidebarList();
@@ -375,13 +378,14 @@
       }
     });
 
+    // Fix: Polling engine loop looks for new database lines and appends them cleanly without wiping layout
     setInterval(() => {
       if (currentUser) {
         const cachedMessages = read(key(), []);
-        const displayedBlocks = document.querySelectorAll('.msg-block').length;
-        if (cachedMessages.length !== displayedBlocks) {
-          load();
-        }
+        // Non-destructive appender: feeds cached lines to incremental renderer without touch inputs focus
+        cachedMessages.forEach(msg => {
+          render(msg);
+        });
       }
     }, 1000);
   }
