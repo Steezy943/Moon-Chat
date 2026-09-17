@@ -26,7 +26,7 @@
   let activeChannel = 'general';
   let userListTabMode = 'online'; 
 
-  // Integrated Live Production Supabase Keys
+  // Direct Live Production Supabase Credentials Mapping
   const supabaseUrl = 'https://supabase.com';
   const supabaseKey = 'sb_publishable_oD3pjw8LGY6uFblF0azYZQ_5CuGNZtL';
   const supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
@@ -216,12 +216,11 @@
   }
 
   function render(m) {
-    // Fix: Prevent rendering a message if it's already visible in the DOM
     if (document.getElementById(`msg-${m.id}`)) return;
 
     const b = document.createElement('article');
     b.className = 'msg-block';
-    b.id = `msg-${m.id}`; // Fixed Anchor tag to match ID elements exactly
+    b.id = `msg-${m.id}`;
 
     const accounts = read('moon-chat-accounts', {});
     const authorData = accounts[m.username.toLowerCase()] || {};
@@ -347,6 +346,7 @@
       config: { presence: { key: currentUser.username.toLowerCase() } }
     });
 
+    // Fix: Intercepts Supabase Realtime Broadcast packets and forces an absolute, live push update to screen layout memory instantly
     realtimeChannel.on('broadcast', { event: 'shuttle-msg' }, payload => {
       const data = payload.payload;
       if (data && data.channel === activeChannel) {
@@ -354,7 +354,7 @@
         if (!ms.some(existing => existing.id === data.msg.id)) {
           ms.push(data.msg);
           write(`moon-chat-messages-${data.channel}`, ms.slice(-100));
-          render(data.msg); // Incremental render: safely appends message instantly to bottom
+          render(data.msg); // Incremental Append: Safe, live update with zero typing context disruption
           scrollToBottom();
         }
       }
@@ -365,8 +365,8 @@
       registeredActiveMeshMembers.clear();
       Object.keys(state).forEach(key => {
         const presenceInfo = state[key];
-        if (presenceInfo && presenceInfo[0] && presenceInfo[0].username) {
-          registeredActiveMeshMembers.set(key, { username: presenceInfo[0].username, lastSeen: Date.now() });
+        if (presenceInfo && presenceInfo && presenceInfo.username) {
+          registeredActiveMeshMembers.set(key, { username: presenceInfo.username, lastSeen: Date.now() });
         }
       });
       renderUserSidebarList();
@@ -377,17 +377,6 @@
         await realtimeChannel.track({ username: currentUser.username, onlineAt: new Date().toISOString() });
       }
     });
-
-    // Fix: Polling engine loop looks for new database lines and appends them cleanly without wiping layout
-    setInterval(() => {
-      if (currentUser) {
-        const cachedMessages = read(key(), []);
-        // Non-destructive appender: feeds cached lines to incremental renderer without touch inputs focus
-        cachedMessages.forEach(msg => {
-          render(msg);
-        });
-      }
-    }, 1000);
   }
   function broadcastPresence() {
     // Handled natively via Supabase Channel States
