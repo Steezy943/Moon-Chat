@@ -558,6 +558,6 @@
     };
   }
 
-  window.setMode('login');
+  window.setMode('signup'); 
   show('auth-section');
 })();
